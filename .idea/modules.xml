@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/android-http.iml" filepath="$PROJECT_DIR$/android-http.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/download-library/download-library.iml" filepath="$PROJECT_DIR$/download-library/download-library.iml" />
+      <module fileurl="file://$PROJECT_DIR$/library/library.iml" filepath="$PROJECT_DIR$/library/library.iml" />
+      <module fileurl="file://$PROJECT_DIR$/upload-library/upload-library.iml" filepath="$PROJECT_DIR$/upload-library/upload-library.iml" />
+    </modules>
+  </component>
+</project>
