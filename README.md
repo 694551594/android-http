@@ -95,17 +95,23 @@ httpRequester.cancel();
 
 ```java
 HttpRequester<WeatherInfo> httpRequester =
-                new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                    .call(getAPI().getWeatherInfo("北京")).exceptionProxy(false)
-                    .listener(new HttpResponseListener<WeatherInfo>() {
-                      @Override
-                      public void onResponse(Context context, int requestCode, WeatherInfo response,
-                          boolean isFromCache) {
-                        super.onResponse(context, requestCode, response, isFromCache);
-                        Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
-                            .show();
-                      }
-                    }).request();
+    new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
+        .call(getAPI().getWeatherInfo("北京")).exceptionProxy(false)
+        .listener(new HttpResponseListener<WeatherInfo>() {
+          @Override
+          public void onResponse(Context context, int requestCode, WeatherInfo response,
+              boolean isFromCache) {
+            super.onResponse(context, requestCode, response, isFromCache);
+            Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
+                .show();
+          }
+
+          @Override
+          public void onException(Context context, Throwable t) {
+            super.onException(context, t);
+            // 自定义异常处理
+          }
+        }).request();
 ```
 
 这样，你就可以自己处理异常情况了。
