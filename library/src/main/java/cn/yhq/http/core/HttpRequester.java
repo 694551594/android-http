@@ -146,7 +146,7 @@ public final class HttpRequester<T> {
       return httpRequester;
     }
 
-    public Call<T> request() {
+    public HttpRequester<T> request() {
       HttpRequester<T> httpRequester = build();
       return httpRequester.request();
     }
@@ -487,7 +487,7 @@ public final class HttpRequester<T> {
    *
    * @return
    */
-  public Call<T> request() {
+  public HttpRequester<T> request() {
     return handleRequest();
   }
 
@@ -553,7 +553,7 @@ public final class HttpRequester<T> {
    *
    * @return
    */
-  private Call<T> handleRequest() {
+  private HttpRequester<T> handleRequest() {
     put(mContext, this);
     handleCache(this.mHttpRequestProvider.getCacheStrategy());
     final int requestCode = this.mHttpRequestProvider.getRequestCode();
@@ -592,7 +592,7 @@ public final class HttpRequester<T> {
       remove(mContext, HttpRequester.this);
       mHttpHandler.requestException(t, requestCode);
     }
-    return mCall;
+    return this;
   }
 
 }
