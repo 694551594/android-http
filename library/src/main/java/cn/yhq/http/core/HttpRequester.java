@@ -44,8 +44,8 @@ public final class HttpRequester<T> {
       new AuthenticatorInterceptor();
   private final static AuthTokenInterceptor mAuthTokenInterceptor = new AuthTokenInterceptor();
 
-  private static Map<Context, List<HttpRequester<?>>> mHttpRequester = new HashMap<>();
-  private static Map<Class<?>, Object> apis = new HashMap<>();
+  private final static Map<Context, List<HttpRequester<?>>> mHttpRequester = new HashMap<>();
+  private final static Map<Class<?>, Object> apis = new HashMap<>();
   private static OkHttpClient mOkHttpClient;
   private static AuthTokenHandler mAuthTokenHandler;
   // 缓存有效时间
@@ -115,12 +115,15 @@ public final class HttpRequester<T> {
 
     public Builder(final Context context) {
       this.context = context;
-      httpRequestListener = new DefaultHttpRequestListener<>(context);
     }
 
     public HttpRequester<T> build() {
       if (!this.isAsync()) {
         this.httpRequestListener = null;
+      } else {
+        if (this.httpRequestListener == null) {
+          this.httpRequestListener = new DefaultHttpRequestListener<>(context);
+        }
       }
       if (this.httpRequestProvider == null) {
         this.httpRequestProvider = new IHttpRequestProvider<T>() {
@@ -531,12 +534,27 @@ public final class HttpRequester<T> {
   }
 
   /**
-   * 获取本次请求的response，在未请求到数据的时候，此值会返回null
+   * 获取本次请求的response
+   *
+   * 1、异步操作的情况下，在未请求到数据的时候，此值会返回null。
+   * 2、同步操作的情况下，在请求结束后，此值会返回对应的内容
    *
    * @return
    */
   public retrofit2.Response getResponse() {
     return mResponse;
+  }
+
+  /**
+   * 获取返回的实体，如果未返回内容，则返回null
+   *
+   * @return
+     */
+  public T getResponseBody() {
+    if (mResponse == null) {
+      return null;
+    }
+    return mResponse.body();
   }
 
   /**
