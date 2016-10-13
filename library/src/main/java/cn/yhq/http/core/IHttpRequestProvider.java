@@ -4,9 +4,9 @@ import retrofit2.Call;
 
 public interface IHttpRequestProvider<T> {
 
-  int getRequestCode();
+    int getRequestCode();
 
-  Call<T> execute(int requestCode);
+    Call<T> execute(int requestCode);
 
-  CacheStrategy getCacheStrategy();
+    CacheStrategy getCacheStrategy();
 }

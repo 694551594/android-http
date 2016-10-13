@@ -6,10 +6,10 @@ package cn.yhq.http.core;
  */
 public interface AuthTokenHandler {
 
-  String getAuthName();
+    String getAuthName();
 
-  String getAuthValue(boolean isRefresh);
+    String getAuthValue(boolean isRefresh);
 
-  boolean isIgnoreUrl(String url);
+    boolean isIgnoreUrl(String url);
 
 }
