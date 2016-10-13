@@ -14,10 +14,10 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 
-class HttpResponseExceptionListener implements IHttpResponseExceptionHandler {
+class DefaultHttpExceptionListener implements IHttpExceptionHandler {
 
     @Override
-    public void onResponseException(Context context, Throwable t) {
+    public void onException(Context context, Throwable t) {
         // 服务器连接失败，请稍后重试
         // ErrorMessage errorMsg = ErrorMessage.ERR_HTTP_STATUS_CODE;
         ErrorMessage errorMsg = null;

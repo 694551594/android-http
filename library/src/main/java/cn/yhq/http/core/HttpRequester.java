@@ -49,7 +49,7 @@ public final class HttpRequester<T> {
     private static AuthTokenHandler mAuthTokenHandler;
     private static IHttpRequestListener mDefaultHttpRequestListener =
             new DefaultHttpRequestListener();
-    private static IHttpResponseExceptionHandler mHttpResponseExceptionHandler = new HttpResponseExceptionListener();
+    private static IHttpExceptionHandler mHttpExceptionHandler = new DefaultHttpExceptionListener();
     // 缓存有效时间
     private final static int CACHE_MAX_STALE = 7 * 24 * 3600;
 
@@ -96,8 +96,8 @@ public final class HttpRequester<T> {
             @Override
             public void onException(Context context, Throwable t) {
                 super.onException(context, t);
-                if (exceptionProxy && mHttpResponseExceptionHandler != null) {
-                    mHttpResponseExceptionHandler.onResponseException(context, t);
+                if (exceptionProxy && mHttpExceptionHandler != null) {
+                    mHttpExceptionHandler.onException(context, t);
                 }
                 if (httpResponseListener != null) {
                     httpResponseListener.onException(context, t);
@@ -275,9 +275,9 @@ public final class HttpRequester<T> {
         });
     }
 
-    public static void setHttpResponseExceptionHandler(
-            IHttpResponseExceptionHandler httpResponseExceptionHandler) {
-        mHttpResponseExceptionHandler = httpResponseExceptionHandler;
+    public static void setDefaultHttpExceptionHandler(
+            IHttpExceptionHandler httpResponseExceptionHandler) {
+        mHttpExceptionHandler = httpResponseExceptionHandler;
     }
 
     public static <T> void setDefaultHttpRequestListener(
