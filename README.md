@@ -70,18 +70,18 @@ HttpRequester.registerAPI("http://wthrcdn.etouch.cn", API.class);
 ```
 ###6、请求数据
 ```java
-            HttpRequester<WeatherInfo> httpRequester =
-                new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                    .call(getAPI().getWeatherInfo("北京"))
-                    .listener(new HttpResponseListener<WeatherInfo>() {
-                      @Override
-                      public void onResponse(Context context, int requestCode, WeatherInfo response,
-                          boolean isFromCache) {
-                        super.onResponse(context, requestCode, response, isFromCache);
-                        Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
-                            .show();
-                      }
-                    }).request();
+HttpRequester<WeatherInfo> httpRequester =
+    new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
+        .call(getAPI().getWeatherInfo("北京"))
+        .listener(new HttpResponseListener<WeatherInfo>() {
+          @Override
+          public void onResponse(Context context, int requestCode, WeatherInfo response,
+              boolean isFromCache) {
+            super.onResponse(context, requestCode, response, isFromCache);
+            Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
+                .show();
+          }
+        }).request();
 ```
 ok,数据请求成功。
 
@@ -90,7 +90,35 @@ ok,数据请求成功。
 httpRequester.cancel();
 ```
 
-###7、自定义异常处理
+###7、同步请求
+本库也支持同步请求，同步请求适合在线程里面请求数据。在构建请求器的时候设置``.setAsync(false)``即可，注意，同步请求的时候会屏蔽掉系统自带的请求监听器，不会出现请求正在加载的对话框，需要用户自己在UI线程里面自己添加。
+```java
+ new Thread(new Runnable() {
+              @Override
+              public void run() {
+                HttpRequester<WeatherInfo> httpRequester =
+                    new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
+                        .call(getAPI().getWeatherInfo("北京")).setAsync(false)
+                        .listener(new HttpResponseListener<WeatherInfo>() {
+                          @Override
+                          public void onResponse(Context context, int requestCode,
+                              WeatherInfo response, boolean isFromCache) {
+                            super.onResponse(context, requestCode, response, isFromCache);
+                            // UI线程
+                            Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
+                                    .show();
+                          }
+                        }).request();
+                // IO线程
+                WeatherInfo weatherInfo = httpRequester.getResponseBody();
+                System.out.println(weatherInfo);
+              }
+            }).start();
+```
+
+这里要说明的是：同步请求获取返回数据有两种方式，1、调用``httpRequester.getResponseBody()``直接返回响应实体，此操作一般在IO线程里面使用。2、添加HttpResponseListener监听器进行回调，在回调参数里面可以拿到实体，此回调方法运行在UI线程里。所以大家可以根据实际情况去选择拿到实体的方式。
+
+###8、自定义异常处理
 此框架中自带了异常处理器，如果你想自定义异常处理器，可以设置exceptionProxy=false：
 
 ```java
