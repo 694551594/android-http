@@ -19,19 +19,20 @@ public class DefaultHttpRequestListener<T>
       IHttpRequestListener<T>,
       DialogInterface.OnCancelListener {
   private Call<T> mCall;
+  private Context mContext;
   private IDialog mLoadingDialog;
 
   public DefaultHttpRequestListener(Context context) {
     if (context == null) {
       return;
     }
-    mLoadingDialog = DialogBuilder.loadingDialog(context).setOnCancelListener(this).create();
+    this.mContext = context;
   }
 
   @Override
   public void onStart(Call<T> call, int requestCode) {
     this.mCall = call;
-    mLoadingDialog.show();
+    mLoadingDialog = DialogBuilder.loadingDialog(mContext).setOnCancelListener(this).show();
   }
 
   @Override

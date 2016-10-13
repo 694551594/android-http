@@ -118,13 +118,7 @@ public final class HttpRequester<T> {
     }
 
     public HttpRequester<T> build() {
-      if (!this.isAsync()) {
-        this.httpRequestListener = null;
-      } else {
-        if (this.httpRequestListener == null) {
-          this.httpRequestListener = new DefaultHttpRequestListener<>(context);
-        }
-      }
+      this.httpRequestListener = new DefaultHttpRequestListener<>(context);
       if (this.httpRequestProvider == null) {
         this.httpRequestProvider = new IHttpRequestProvider<T>() {
 
