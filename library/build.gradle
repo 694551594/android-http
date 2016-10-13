@@ -33,7 +33,7 @@ dependencies {
     compile 'com.squareup.retrofit2:converter-gson:2.1.0'
     compile 'com.squareup.okio:okio:1.6.0'
     compile 'com.github.lzyzsd:circleprogress:1.1.0@aar'
-    compile 'cn.yhq:android-dialog:1.0'
+    compile 'cn.yhq:android-dialog:+'
     testCompile 'junit:junit:4.12'
 }
 
@@ -41,7 +41,7 @@ publish {
     artifactId = 'android-http'
     userOrg = rootProject.userOrg
     groupId = rootProject.groupId
-    publishVersion = rootProject.publishVersion
+    publishVersion = '1.1'
     desc = rootProject.description
     website = rootProject.website
 }

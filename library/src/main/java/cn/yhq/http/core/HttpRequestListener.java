@@ -1,11 +1,13 @@
 package cn.yhq.http.core;
 
+import android.content.Context;
+
 import retrofit2.Call;
 
 public class HttpRequestListener<T> implements IHttpRequestListener<T> {
 
   @Override
-  public void onStart(Call<T> call, int requestCode) {
+  public void onStart(Context context, Call<T> call, int requestCode) {
     // TODO Auto-generated method stub
 
   }

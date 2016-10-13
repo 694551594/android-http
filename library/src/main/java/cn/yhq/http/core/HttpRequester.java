@@ -48,6 +48,8 @@ public final class HttpRequester<T> {
   private final static Map<Class<?>, Object> apis = new HashMap<>();
   private static OkHttpClient mOkHttpClient;
   private static AuthTokenHandler mAuthTokenHandler;
+  private static IHttpRequestListener mDefaultHttpRequestListener =
+      new DefaultHttpRequestListener();
   // 缓存有效时间
   private final static int CACHE_MAX_STALE = 7 * 24 * 3600;
 
@@ -56,8 +58,6 @@ public final class HttpRequester<T> {
   private Context mContext;
   private boolean isAsync;
   private IHttpRequestProvider mHttpRequestProvider;
-  private IHttpRequestListener mHttpRequestListener;
-  private IHttpResponseListener mHttpResponseListener;
   private HttpHandler mHttpHandler;
 
   public static class Builder<T> {
@@ -115,10 +115,10 @@ public final class HttpRequester<T> {
 
     public Builder(final Context context) {
       this.context = context;
+      this.httpRequestListener = mDefaultHttpRequestListener;
     }
 
     public HttpRequester<T> build() {
-      this.httpRequestListener = new DefaultHttpRequestListener<>(context);
       if (this.httpRequestProvider == null) {
         this.httpRequestProvider = new IHttpRequestProvider<T>() {
 
@@ -259,12 +259,10 @@ public final class HttpRequester<T> {
 
   private HttpRequester(Builder builder) {
     this.mContext = builder.getContext();
-    this.mHttpRequestListener = builder.getHttpRequestListener();
     this.mHttpRequestProvider = builder.getHttpRequestProvider();
-    this.mHttpResponseListener = builder.getHttpResponseListener();
     this.isAsync = builder.isAsync();
-    this.mHttpHandler =
-        new HttpHandler(this.mContext, this.mHttpRequestListener, this.mHttpResponseListener);
+    this.mHttpHandler = new HttpHandler(this.mContext, builder.getHttpRequestListener(),
+        builder.getHttpResponseListener());
     // 进度监听
     mHttpResponseProgressInterceptor.setProgressListener(new ProgressListener() {
 
@@ -280,6 +278,11 @@ public final class HttpRequester<T> {
         mHttpHandler.requestProgress(multipart, bytesRead, contentLength, done);
       }
     });
+  }
+
+  public static <T> void setDefaultHttpRequestListener(
+      IHttpRequestListener<T> httpRequestListener) {
+    mDefaultHttpRequestListener = httpRequestListener;
   }
 
   public static <API> API registerAPI(String baseUrl, Class<API> apiClass) {
@@ -314,7 +317,7 @@ public final class HttpRequester<T> {
   private static String getDiskFileDir(Context context) {
     String cachePath = null;
     if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())
-            || !Environment.isExternalStorageRemovable()) {
+        || !Environment.isExternalStorageRemovable()) {
       cachePath = context.getExternalFilesDir(null).getPath();
     } else {
       cachePath = context.getFilesDir().getPath();
@@ -530,8 +533,7 @@ public final class HttpRequester<T> {
   /**
    * 获取本次请求的response
    *
-   * 1、异步操作的情况下，在未请求到数据的时候，此值会返回null。
-   * 2、同步操作的情况下，在请求结束后，此值会返回对应的内容
+   * 1、异步操作的情况下，在未请求到数据的时候，此值会返回null。 2、同步操作的情况下，在请求结束后，此值会返回对应的内容
    *
    * @return
    */
@@ -543,7 +545,7 @@ public final class HttpRequester<T> {
    * 获取返回的实体，如果未返回内容，则返回null
    *
    * @return
-     */
+   */
   public T getResponseBody() {
     if (mResponse == null) {
       return null;

@@ -100,7 +100,7 @@ public final class HttpHandler<T> extends Handler {
     switch (msg.what) {
       case MSG_REQUEST_START:
         if (mHttpRequestListener != null) {
-          mHttpRequestListener.onStart(call, requestCode);
+          mHttpRequestListener.onStart(this.mContextRef.get(), call, requestCode);
         }
         break;
       case MSG_REQUEST_EXCEPTION:
