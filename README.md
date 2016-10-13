@@ -5,7 +5,7 @@
 ####注意：此框架仅适用于使用了retrofit2+okhttp3作为http请求的应用。
 
 #gradle配置
-`compile 'cn.yhq:android-http:1.0'`
+`compile 'cn.yhq:android-http:1.1'`
 
 #使用方式
 ###1、初始化
