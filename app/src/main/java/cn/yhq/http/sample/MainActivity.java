@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
     ListView listView = (ListView) this.findViewById(R.id.listview);
 
     final SimpleListAdapter<String> adapter =
-        SimpleListAdapter.create(this, new String[] {"普通请求", "文件上传", "文件下载"},
+        SimpleListAdapter.create(this, new String[] {"普通异步请求", "普通同步请求", "文件上传", "文件下载"},
             android.R.layout.simple_list_item_1, new SimpleListAdapter.IItemViewSetup<String>() {
               @Override
               public void setupView(ViewHolder viewHolder, int position, String entity) {
@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
           case 0:
             HttpRequester<WeatherInfo> httpRequester =
                 new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                    .call(getAPI().getWeatherInfo("北京"))
+                    .call(getAPI().getWeatherInfo("北京")) // .exceptionProxy(false)
                     .listener(new HttpResponseListener<WeatherInfo>() {
                       @Override
                       public void onResponse(Context context, int requestCode, WeatherInfo response,
@@ -50,10 +50,35 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
                             .show();
                       }
+
+                      @Override
+                      public void onException(Context context, Throwable t) {
+                        super.onException(context, t);
+                        // 自定义异常处理
+                      }
                     }).request();
             // httpRequester.cancel();
             break;
           case 1:
+            new Thread(new Runnable() {
+              @Override
+              public void run() {
+                HttpRequester<WeatherInfo> httpRequester =
+                    new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
+                        .call(getAPI().getWeatherInfo("北京")).setAsync(false)
+                        .listener(new HttpResponseListener<WeatherInfo>() {
+                          @Override
+                          public void onResponse(Context context, int requestCode,
+                              WeatherInfo response, boolean isFromCache) {
+                            super.onResponse(context, requestCode, response, isFromCache);
+                            Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
+                                    .show();
+                          }
+                        }).request();
+                WeatherInfo weatherInfo = httpRequester.getResponseBody();
+                System.out.println(weatherInfo);
+              }
+            }).start();
             break;
         }
       }
