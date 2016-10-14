@@ -274,6 +274,10 @@ public final class HttpRequester<T> {
         XCall.setDefaultHttpRequestListener(httpRequestListener);
     }
 
+    public static <T> ICall<T> call(Call<T> call) {
+        return new XCall<>(call);
+    }
+
     /**
      * 开始请求
      *
