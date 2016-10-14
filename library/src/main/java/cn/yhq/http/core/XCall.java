@@ -81,12 +81,9 @@ final class XCall<T> implements ICall<T> {
         }
     }
 
-    ;
-
     class HttpRequestListenerProxy extends HttpRequestListener<T> {
 
         HttpRequestListenerProxy() {
-            mHttpRequestListener = mDefaultHttpRequestListener;
         }
 
         @Override
@@ -124,8 +121,6 @@ final class XCall<T> implements ICall<T> {
             }
         }
     }
-
-    ;
 
     private ProgressListener mResponseProgressListener = new ProgressListener() {
 

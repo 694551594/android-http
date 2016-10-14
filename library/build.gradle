@@ -41,7 +41,7 @@ publish {
     artifactId = 'android-http'
     userOrg = rootProject.userOrg
     groupId = rootProject.groupId
-    publishVersion = 2.0
+    publishVersion = 2.1
     desc = rootProject.description
     website = rootProject.website
 }
