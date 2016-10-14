@@ -131,8 +131,6 @@ HttpRequester<WeatherInfo> httpRequester =
           public void onResponse(Context context, int requestCode, WeatherInfo response,
               boolean isFromCache) {
             super.onResponse(context, requestCode, response, isFromCache);
-            Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
-                .show();
           }
         }).request();
 ```
@@ -158,8 +156,6 @@ httpRequester.cancel();
                       WeatherInfo response, boolean isFromCache) {
                     super.onResponse(context, requestCode, response, isFromCache);
                     // UI线程
-                    Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
-                            .show();
                   }
                 }).request();
         // IO线程
@@ -209,8 +205,6 @@ HttpRequester<WeatherInfo> httpRequester =
               public void onResponse(Context context, int requestCode, WeatherInfo response,
                   boolean isFromCache) {
                 super.onResponse(context, requestCode, response, isFromCache);
-                Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
-                    .show();
               }
     
               @Override
@@ -242,8 +236,6 @@ HttpRequester<WeatherInfo> httpRequester =
               public void onResponse(Context context, int requestCode, WeatherInfo response,
                   boolean isFromCache) {
                 super.onResponse(context, requestCode, response, isFromCache);
-                Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
-                    .show();
               }
     
               @Override
@@ -263,7 +255,6 @@ new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
         public void onResponse(Context context, int requestCode, WeatherInfo response,
                                boolean isFromCache) {
             super.onResponse(context, requestCode, response, isFromCache);
-            toast(new Gson().toJson(response));
         }
 
         @Override
