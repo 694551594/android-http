@@ -6,7 +6,7 @@ public interface IHttpRequestListener {
 
     void onStart(Context context, ICancelable cancelable, int requestCode);
 
-    void onException(int requestCode, Throwable t);
+    void onException(Context context, int requestCode, Throwable t);
 
     void onComplete(int requestCode);
 

@@ -10,7 +10,7 @@ public class HttpRequestListener implements IHttpRequestListener {
     }
 
     @Override
-    public void onException(int requestCode, Throwable t) {
+    public void onException(Context context, int requestCode, Throwable t) {
 
     }
 

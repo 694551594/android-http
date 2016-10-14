@@ -94,9 +94,12 @@ final class XCall<T> implements ICall<T> {
         }
 
         @Override
-        public void onException(int requestCode, Throwable t) {
+        public void onException(Context context, int requestCode, Throwable t) {
+            if (isExceptionProxy && mHttpExceptionHandler != null) {
+                mHttpExceptionHandler.onException(context, t);
+            }
             if (mHttpRequestListener != null) {
-                mHttpRequestListener.onException(requestCode, t);
+                mHttpRequestListener.onException(context, requestCode, t);
             }
         }
 
