@@ -15,117 +15,194 @@ import cn.yhq.adapter.list.SimpleListAdapter;
 import cn.yhq.http.core.AuthTokenHandler;
 import cn.yhq.http.core.HttpRequester;
 import cn.yhq.http.core.HttpResponseListener;
+import cn.yhq.http.core.ICall;
+
+import static cn.yhq.http.core.HttpRequester.getAPI;
 
 public class MainActivity extends AppCompatActivity {
 
-  @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
-    ListView listView = (ListView) this.findViewById(R.id.listview);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        ListView listView = (ListView) this.findViewById(R.id.listview);
 
-    final SimpleListAdapter<String> adapter =
-        SimpleListAdapter.create(this, new String[] {"普通异步请求", "普通同步请求", "文件上传", "文件下载"},
-            android.R.layout.simple_list_item_1, new SimpleListAdapter.IItemViewSetup<String>() {
-              @Override
-              public void setupView(ViewHolder viewHolder, int position, String entity) {
-                viewHolder.bindTextData(android.R.id.text1, entity);
-              }
-            });
+        final SimpleListAdapter<String> adapter =
+                SimpleListAdapter.create(this, new String[]{"普通异步请求", "普通同步请求", "XAPI直接异步请求", "XAPI使用HttpRequester异步请求", "XAPI直接同步请求", "XAPI使用HttpRequester同步请求", "文件上传", "文件下载"},
+                        android.R.layout.simple_list_item_1, new SimpleListAdapter.IItemViewSetup<String>() {
+                            @Override
+                            public void setupView(ViewHolder viewHolder, int position, String entity) {
+                                viewHolder.bindTextData(android.R.id.text1, entity);
+                            }
+                        });
 
-    listView.setAdapter(adapter);
-    listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-      @Override
-      public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        switch (position) {
-          case 0:
-            HttpRequester<WeatherInfo> httpRequester =
-                new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                    .call(getAPI().getWeatherInfo("北京")) // .exceptionProxy(false)
-                    .listener(new HttpResponseListener<WeatherInfo>() {
-                      @Override
-                      public void onResponse(Context context, int requestCode, WeatherInfo response,
-                          boolean isFromCache) {
-                        super.onResponse(context, requestCode, response, isFromCache);
-                        Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
-                            .show();
-                      }
+        listView.setAdapter(adapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                switch (position) {
+                    case 0:
+                        // 普通的call异步请求
+                        HttpRequester<WeatherInfo> httpRequester =
+                                new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
+                                        .call(getAPI(API.class).getWeatherInfo("北京")) // .exceptionProxy(false)
+                                        .listener(new HttpResponseListener<WeatherInfo>() {
+                                            @Override
+                                            public void onResponse(Context context, int requestCode, WeatherInfo response,
+                                                                   boolean isFromCache) {
+                                                super.onResponse(context, requestCode, response, isFromCache);
+                                                toast(new Gson().toJson(response));
+                                            }
 
-                      @Override
-                      public void onException(Context context, Throwable t) {
-                        super.onException(context, t);
-                        // 自定义异常处理
-                      }
-                    }).request();
-            // httpRequester.cancel();
-            break;
-          case 1:
-            new Thread(new Runnable() {
-              @Override
-              public void run() {
-                HttpRequester<WeatherInfo> httpRequester =
-                    new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                        .call(getAPI().getWeatherInfo("北京")).setAsync(false)
-                        .listener(new HttpResponseListener<WeatherInfo>() {
-                          @Override
-                          public void onResponse(Context context, int requestCode,
-                              WeatherInfo response, boolean isFromCache) {
-                            super.onResponse(context, requestCode, response, isFromCache);
-                            Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
-                                    .show();
-                          }
-                        }).request();
-                WeatherInfo weatherInfo = httpRequester.getResponseBody();
-                System.out.println(weatherInfo);
-              }
-            }).start();
-            break;
-        }
-      }
-    });
+                                            @Override
+                                            public void onException(Context context, Throwable t) {
+                                                super.onException(context, t);
+                                                // 自定义异常处理
+                                            }
+                                        }).request();
+                        // httpRequester.cancel();
+                        break;
+                    case 1:
+                        // 普通的call同步请求
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                HttpRequester<WeatherInfo> httpRequester =
+                                        new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
+                                                .call(getAPI(API.class).getWeatherInfo("北京")).setAsync(false)
+                                                .listener(new HttpResponseListener<WeatherInfo>() {
+                                                    @Override
+                                                    public void onResponse(Context context, int requestCode,
+                                                                           WeatherInfo response, boolean isFromCache) {
+                                                        super.onResponse(context, requestCode, response, isFromCache);
+                                                        toast(new Gson().toJson(response));
+                                                    }
+                                                }).request();
+                                WeatherInfo weatherInfo = httpRequester.getResponseBody();
+                                System.out.println(weatherInfo);
+                            }
+                        }).start();
+                        break;
+                    case 2:
+                        // xcall异步请求1
+                        getAPI(XAPI.class).getWeatherInfo("北京").execute(MainActivity.this, new HttpResponseListener<WeatherInfo>() {
+                            @Override
+                            public void onResponse(Context context, int requestCode, WeatherInfo response,
+                                                   boolean isFromCache) {
+                                super.onResponse(context, requestCode, response, isFromCache);
+                                toast(new Gson().toJson(response));
+                            }
 
-    // 通常在Application中初始化
-    HttpRequester.init(this);
-    // token验证处理器
-    HttpRequester.setAuthTokenHandler(new AuthTokenHandler() {
-      @Override
-      public String getAuthName() {
-        // 获取权限验证的key
-        return "Authorization";
-      }
+                        });
+                        break;
+                    case 3:
+                        // xcall异步请求2
+                        new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
+                                .call(getAPI(XAPI.class).getWeatherInfo("北京"))
+                                .listener(new HttpResponseListener<WeatherInfo>() {
+                                    @Override
+                                    public void onResponse(Context context, int requestCode, WeatherInfo response,
+                                                           boolean isFromCache) {
+                                        super.onResponse(context, requestCode, response, isFromCache);
+                                        toast(new Gson().toJson(response));
+                                    }
 
-      @Override
-      public String getAuthValue(boolean isRefresh) {
-        // 获取权限验证的值，如果isRefresh为true的话，说明需要重新进行验证了
-        if (isRefresh) {
-          // 进入登录界面
-          startLoginActivity();
-          return null;
-        } else {
-          // 返回token
-          return "Bearer " + getAccessToken();
-        }
-      }
+                                    @Override
+                                    public void onException(Context context, Throwable t) {
+                                        super.onException(context, t);
+                                        // 自定义异常处理
+                                    }
+                                }).request();
+                        break;
+                    case 4:
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                // xcall同步请求1
+                                ICall<WeatherInfo> call = HttpRequester.getAPI(XAPI.class).getWeatherInfo("北京").async(false).execute(MainActivity.this, new HttpResponseListener<WeatherInfo>() {
+                                    @Override
+                                    public void onResponse(Context context, int requestCode, WeatherInfo response,
+                                                           boolean isFromCache) {
+                                        super.onResponse(context, requestCode, response, isFromCache);
+                                        toast(new Gson().toJson(response));
+                                    }
 
-      @Override
-      public boolean isIgnoreUrl(String url) {
-        // 忽略掉，不需要权限验证的url
-        return false;
-      }
-    });
-    // 注册api接口
-    HttpRequester.registerAPI("http://wthrcdn.etouch.cn", API.class);
-  }
+                                });
+                                WeatherInfo weatherInfo = call.getResponseBody();
+                                System.out.println(weatherInfo);
+                            }
+                        }).start();
+                        break;
+                    case 5:
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                // xcall同步请求2
+                                HttpRequester<WeatherInfo> httpRequester = new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
+                                        .call(getAPI(XAPI.class).getWeatherInfo("北京"))
+                                        .sync()
+                                        .listener(new HttpResponseListener<WeatherInfo>() {
+                                            @Override
+                                            public void onResponse(Context context, int requestCode, WeatherInfo response,
+                                                                   boolean isFromCache) {
+                                                super.onResponse(context, requestCode, response, isFromCache);
+                                                toast(new Gson().toJson(response));
+                                            }
+                                        }).request();
+                                WeatherInfo weatherInfo = httpRequester.getResponseBody();
+                                System.out.println(weatherInfo);
+                            }
+                        }).start();
+                        break;
+                }
 
-  API getAPI() {
-    return HttpRequester.getAPI(API.class);
-  }
+            }
+        });
 
-  String getAccessToken() {
-    return null;
-  }
+        // 通常在Application中初始化
+        HttpRequester.init(this);
+        // token验证处理器
+        HttpRequester.setAuthTokenHandler(new AuthTokenHandler() {
+            @Override
+            public String getAuthName() {
+                // 获取权限验证的key
+                return "Authorization";
+            }
 
-  void startLoginActivity() {
+            @Override
+            public String getAuthValue(boolean isRefresh) {
+                // 获取权限验证的值，如果isRefresh为true的话，说明需要重新进行验证了
+                if (isRefresh) {
+                    // 进入登录界面
+                    startLoginActivity();
+                    return null;
+                } else {
+                    // 返回token
+                    return "Bearer " + getAccessToken();
+                }
+            }
 
-  }
+            @Override
+            public boolean isIgnoreUrl(String url) {
+                // 忽略掉，不需要权限验证的url
+                return false;
+            }
+        });
+        // 注册api接口
+        HttpRequester.registerAPI("http://wthrcdn.etouch.cn", API.class);
+        HttpRequester.registerXAPI("http://wthrcdn.etouch.cn", XAPI.class);
+    }
+
+    void toast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG)
+                .show();
+    }
+
+    String getAccessToken() {
+        return null;
+    }
+
+    void startLoginActivity() {
+
+    }
 }
