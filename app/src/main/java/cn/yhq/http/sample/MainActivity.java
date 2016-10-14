@@ -17,7 +17,6 @@ import cn.yhq.http.core.HttpRequester;
 import cn.yhq.http.core.HttpResponseListener;
 import cn.yhq.http.core.ICall;
 
-import static cn.yhq.http.core.HttpRequester.getAPI;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -45,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
                         // 普通的call异步请求
                         HttpRequester<WeatherInfo> httpRequester =
                                 new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                                        .call(getAPI(API.class).getWeatherInfo("北京")) // .exceptionProxy(false)
+                                        .call(HttpRequester.getAPI(API.class).getWeatherInfo("北京")) // .exceptionProxy(false)
                                         .listener(new HttpResponseListener<WeatherInfo>() {
                                             @Override
                                             public void onResponse(Context context, int requestCode, WeatherInfo response,
@@ -69,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
                             public void run() {
                                 HttpRequester<WeatherInfo> httpRequester =
                                         new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                                                .call(getAPI(API.class).getWeatherInfo("北京")).setAsync(false)
+                                                .call(HttpRequester.getAPI(API.class).getWeatherInfo("北京")).setAsync(false)
                                                 .listener(new HttpResponseListener<WeatherInfo>() {
                                                     @Override
                                                     public void onResponse(Context context, int requestCode,
@@ -85,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case 2:
                         // xcall异步请求1
-                        getAPI(XAPI.class).getWeatherInfo("北京").execute(MainActivity.this, new HttpResponseListener<WeatherInfo>() {
+                        HttpRequester.getAPI(XAPI.class).getWeatherInfo("北京").execute(MainActivity.this, new HttpResponseListener<WeatherInfo>() {
                             @Override
                             public void onResponse(Context context, int requestCode, WeatherInfo response,
                                                    boolean isFromCache) {
@@ -98,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
                     case 3:
                         // xcall异步请求2
                         new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                                .call(getAPI(XAPI.class).getWeatherInfo("北京"))
+                                .call(HttpRequester.getAPI(XAPI.class).getWeatherInfo("北京"))
                                 .listener(new HttpResponseListener<WeatherInfo>() {
                                     @Override
                                     public void onResponse(Context context, int requestCode, WeatherInfo response,
@@ -139,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
                             public void run() {
                                 // xcall同步请求2
                                 HttpRequester<WeatherInfo> httpRequester = new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                                        .call(getAPI(XAPI.class).getWeatherInfo("北京"))
+                                        .call(HttpRequester.getAPI(XAPI.class).getWeatherInfo("北京"))
                                         .sync()
                                         .listener(new HttpResponseListener<WeatherInfo>() {
                                             @Override
