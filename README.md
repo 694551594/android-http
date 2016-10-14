@@ -7,6 +7,56 @@
 #gradle配置
 `compile 'cn.yhq:android-http:2.0'`
 
+#V2.0版本新的请求方式
+此次更新主要将封装代码转移到新的XCall类里面，然后创建了retrofit2的Call适配器XCallAdapterFactory，扩展了请求数据的方式。
+其他API接口不变，我们只说新增加的地方：
+###1、编写API接口
+retrofit2最大的特色啦，把一个http请求使用注解的方法去调用，我们这里以获取天气预报的接口为例，注意，和原来不同的是，方法的返回参数为ICall：
+```java
+public interface XAPI {
+
+    @GET("weather_mini")
+    ICall<WeatherInfo> getWeatherInfo(@Query("city") String city);
+}
+
+```
+
+###2、注册接口
+使用HttpRequester将上一步写的接口注册进来，注意，和原来不同的是使用了registerXAPI方法：
+```java
+HttpRequester.registerXAPI("http://wthrcdn.etouch.cn", XAPI.class);
+```
+
+###3、请求数据
+（1）直接使用ICall对象请求：调用ICall的execute方法即可：
+```java
+HttpRequester.getAPI(XAPI.class).getWeatherInfo("北京").execute(MainActivity.this, new HttpResponseListener<WeatherInfo>() {
+    @Override
+    public void onResponse(Context context, int requestCode, WeatherInfo response,
+                           boolean isFromCache) {
+        super.onResponse(context, requestCode, response, isFromCache);
+    }
+});
+```
+（2）构建HttpRequester请求器：
+```java
+new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
+        .call(HttpRequester.getAPI(XAPI.class).getWeatherInfo("北京"))
+        .listener(new HttpResponseListener<WeatherInfo>() {
+            @Override
+            public void onResponse(Context context, int requestCode, WeatherInfo response,
+                                   boolean isFromCache) {
+                super.onResponse(context, requestCode, response, isFromCache);
+            }
+
+            @Override
+            public void onException(Context context, Throwable t) {
+                super.onException(context, t);
+            }
+        }).request();
+```
+其他API的使用方法和之前的一样。
+
 #使用方式
 ###1、初始化
 在你的Application类里面初始化：
@@ -119,10 +169,12 @@ httpRequester.cancel();
  }).start();
 ```
 
-这里要说明的是：同步请求获取返回数据有两种方式，1、调用``httpRequester.getResponseBody()``直接返回响应实体，此操作一般在IO线程里面使用。2、添加HttpResponseListener监听器进行回调，在回调参数里面可以拿到实体，此回调方法运行在UI线程里。所以大家可以根据实际情况去选择拿到实体的方式。
+这里要说明的是：同步请求获取返回数据有两种方式，
+（1）调用``httpRequester.getResponseBody()``直接返回响应实体，此操作一般在IO线程里面使用。
+（2）添加HttpResponseListener监听器进行回调，在回调参数里面可以拿到实体，此回调方法运行在UI线程里。所以大家可以根据实际情况去选择拿到实体的方式。
 
 ###8、自定义请求监听器
-如果你想自定义请求的时候展现的请求对话框，你需要调用HttpRequester.setDefaultHttpRequestListener(IHttpRequestListener<T> httpRequestListener)方法设置你自己的请求监听器：
+（1）如果你想自定义请求的时候展现的请求对话框，你需要调用HttpRequester.setDefaultHttpRequestListener(IHttpRequestListener<T> httpRequestListener)方法设置你自己的请求监听器：
 ```java
 HttpRequester.setDefaultHttpRequestListener(new IHttpRequestListener<T>() {
     private IDialog mLoadingDialog;
@@ -146,7 +198,7 @@ HttpRequester.setDefaultHttpRequestListener(new IHttpRequestListener<T>() {
 });
 ```
 
-当然，如果你在单次请求中不想使用请求监听器，你可以在构建HttpRequester单次请求器的时候，将IHttpRequestListener设置为null即可，其他请求不会受影响：
+（2）当然，如果你在单次请求中不想使用请求监听器，你可以在构建HttpRequester的时候，将IHttpRequestListener设置为null即可，其他请求不会受影响：
 ```java
 HttpRequester<WeatherInfo> httpRequester =
     new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
@@ -171,6 +223,7 @@ HttpRequester<WeatherInfo> httpRequester =
 
 ###9、自定义异常处理
 异常处理分为全局异常与单次请求异常。
+
 （1）全局异常处理器：IHttpExceptionHandler，负责处理比如无网络，请求超时等等异常。全局异常处理器在每次请求发生异常的时候都会去调用处理。如果你想自定义全局异常处理器，需要调用HttpRequester.setDefaultHttpExceptionHandler(IHttpExceptionHandler httpExceptionHandler)方法：
 ```java
 HttpRequester.setDefaultHttpExceptionHandler(new IHttpExceptionHandler() {
@@ -179,7 +232,7 @@ HttpRequester.setDefaultHttpExceptionHandler(new IHttpExceptionHandler() {
     }
 });
 ```
-（2）单次请求异常处理：在构建HttpRequester单次请求器的时候，可以添加HttpResponseListener监听器，此监听器其中的onException方法就是此次请求的异常处理回调，如果有需要，你可以在此方法做一些处理：
+（2）单次请求异常处理：在构建HttpRequester的时候，可以添加HttpResponseListener监听器，此监听器其中的onException方法就是此次请求的异常处理回调，如果有需要，你可以在此方法做一些处理：
 ```java
 HttpRequester<WeatherInfo> httpRequester =
     new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
