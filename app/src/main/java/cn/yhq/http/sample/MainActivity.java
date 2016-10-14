@@ -16,6 +16,7 @@ import cn.yhq.http.core.AuthTokenHandler;
 import cn.yhq.http.core.HttpRequester;
 import cn.yhq.http.core.HttpResponseListener;
 import cn.yhq.http.core.ICall;
+import cn.yhq.http.core.IHttpRequestListener;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -27,7 +28,15 @@ public class MainActivity extends AppCompatActivity {
         ListView listView = (ListView) this.findViewById(R.id.listview);
 
         final SimpleListAdapter<String> adapter =
-                SimpleListAdapter.create(this, new String[]{"普通异步请求", "普通同步请求", "XAPI直接异步请求", "XAPI使用HttpRequester异步请求", "XAPI直接同步请求", "XAPI使用HttpRequester同步请求", "文件上传", "文件下载"},
+                SimpleListAdapter.create(this, new String[]{
+                                "普通异步请求",
+                                "普通同步请求",
+                                "XAPI直接异步请求",
+                                "XAPI使用HttpRequester异步请求",
+                                "XAPI直接同步请求",
+                                "XAPI使用HttpRequester同步请求",
+                                "使用自定义请求监听器"
+                        },
                         android.R.layout.simple_list_item_1, new SimpleListAdapter.IItemViewSetup<String>() {
                             @Override
                             public void setupView(ViewHolder viewHolder, int position, String entity) {
@@ -44,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
                         // 普通的call异步请求
                         HttpRequester<WeatherInfo> httpRequester =
                                 new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                                        .call(HttpRequester.getAPI(API.class).getWeatherInfo("北京")) // .exceptionProxy(false)
+                                        .call(HttpRequester.getAPI(API.class).getWeatherInfo("北京")).exceptionProxy(false)
                                         .listener(new HttpResponseListener<WeatherInfo>() {
                                             @Override
                                             public void onResponse(Context context, int requestCode, WeatherInfo response,
@@ -152,6 +161,19 @@ public class MainActivity extends AppCompatActivity {
                                 System.out.println(weatherInfo);
                             }
                         }).start();
+                        break;
+                    case 6:
+                        new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
+                                .call(HttpRequester.getAPI(XAPI.class).getWeatherInfo("北京"))
+                                .listener((IHttpRequestListener) null)
+                                .listener(new HttpResponseListener<WeatherInfo>() {
+                                    @Override
+                                    public void onResponse(Context context, int requestCode, WeatherInfo response,
+                                                           boolean isFromCache) {
+                                        super.onResponse(context, requestCode, response, isFromCache);
+                                        toast(new Gson().toJson(response));
+                                    }
+                                }).request();
                         break;
                 }
 
