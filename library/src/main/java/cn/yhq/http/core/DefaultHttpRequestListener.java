@@ -12,19 +12,19 @@ import cn.yhq.dialog.core.IDialog;
  * @param <T>
  * @author Yanghuiqiang 2015-10-9
  */
-public class DefaultHttpRequestListener<T>
+class DefaultHttpRequestListener<T>
         extends
         HttpRequestListener<T> implements
         DialogInterface.OnCancelListener {
-    private HttpRequester<T> httpRequester;
+    private ICancelable mCancelable;
     private IDialog mLoadingDialog;
 
     public DefaultHttpRequestListener() {
     }
 
     @Override
-    public void onStart(Context context, HttpRequester<T> httpRequester, int requestCode) {
-        this.httpRequester = httpRequester;
+    public void onStart(Context context, ICancelable cancelable, int requestCode) {
+        this.mCancelable = cancelable;
         mLoadingDialog = DialogBuilder.loadingDialog(context).setOnCancelListener(this).show();
     }
 
@@ -35,6 +35,6 @@ public class DefaultHttpRequestListener<T>
 
     @Override
     public void onCancel(DialogInterface dialog) {
-        this.httpRequester.cancel();
+        this.mCancelable.cancel();
     }
 }

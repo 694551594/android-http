@@ -1,25 +1,16 @@
 package cn.yhq.http.core;
 
 import android.content.Context;
-import android.os.Environment;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import okhttp3.Authenticator;
 import okhttp3.Cache;
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.Route;
 import retrofit2.Call;
-import retrofit2.Callback;
+import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -31,54 +22,25 @@ import retrofit2.converter.gson.GsonConverterFactory;
  * @author Yanghuiqiang 2015-10-9
  */
 public final class HttpRequester<T> {
-    private final static String TAG = "HttpRequester";
-    // 拦截器
-    private final static HttpRequestCacheInterceptor mHttpRequestCacheInterceptor =
-            new HttpRequestCacheInterceptor();
-    private final static HttpResponseProgressInterceptor mHttpResponseProgressInterceptor =
-            new HttpResponseProgressInterceptor();
-    private final static HttpRequestProgressInterceptor mHttpRequestProgressInterceptor =
-            new HttpRequestProgressInterceptor();
-    private final static AuthenticatorInterceptor mAuthenticatorInterceptor =
-            new AuthenticatorInterceptor();
-    private final static AuthTokenInterceptor mAuthTokenInterceptor = new AuthTokenInterceptor();
-
-    private final static Map<Context, List<HttpRequester<?>>> mHttpRequester = new HashMap<>();
     private final static Map<Class<?>, Object> apis = new HashMap<>();
     private static OkHttpClient mOkHttpClient;
-    private static AuthTokenHandler mAuthTokenHandler;
-    private static IHttpRequestListener mDefaultHttpRequestListener =
-            new DefaultHttpRequestListener();
-    private static IHttpExceptionHandler mHttpExceptionHandler = new DefaultHttpExceptionListener();
-    // 缓存有效时间
-    private final static int CACHE_MAX_STALE = 7 * 24 * 3600;
-
-    private retrofit2.Response<T> mResponse;
-    private Call<T> mCall;
     private Context mContext;
-    private boolean isAsync;
-    private IHttpRequestProvider mHttpRequestProvider;
-    private HttpHandler mHttpHandler;
+    private ICall<T> mCall;
+    private IHttpRequestListener<T> mHttpRequestListener;
+    private IHttpResponseListener<T> mHttpResponseListener;
 
     public static class Builder<T> {
-        private Context context;
-        private IHttpRequestProvider<T> httpRequestProvider;
         private IHttpRequestListener<T> httpRequestListener;
         private IHttpResponseListener<T> httpResponseListener;
         private IHttpResponseCommonListener httpResponseCommonListener;
 
-        private final HttpRequestProvider<T> _httpRequestProvider = new HttpRequestProvider<T>() {
-            @Override
-            public Call<T> execute(int requestCode) {
-                return null;
-            }
-        };
-
-        private Call<T> call;
-        private int requestCode = _httpRequestProvider.getRequestCode();
-        private CacheStrategy cacheStrategy = _httpRequestProvider.getCacheStrategy();
-        private boolean exceptionProxy = true;
+        private Context context;
+        private int requestCode;
+        private CacheStrategy cacheStrategy = CacheStrategy.ONLY_NETWORK;
         private boolean async = true;
+        private boolean exceptionProxy = true;
+
+        private ICall<T> xCall;
 
         private IHttpResponseListener httpResponseListenerProxy = new HttpResponseListener<T>() {
 
@@ -96,9 +58,6 @@ public final class HttpRequester<T> {
             @Override
             public void onException(Context context, Throwable t) {
                 super.onException(context, t);
-                if (exceptionProxy && mHttpExceptionHandler != null) {
-                    mHttpExceptionHandler.onException(context, t);
-                }
                 if (httpResponseListener != null) {
                     httpResponseListener.onException(context, t);
                 }
@@ -110,31 +69,17 @@ public final class HttpRequester<T> {
 
         public Builder(final Context context) {
             this.context = context;
-            this.httpRequestListener = mDefaultHttpRequestListener;
         }
 
         public HttpRequester<T> build() {
-            if (this.httpRequestProvider == null) {
-                this.httpRequestProvider = new IHttpRequestProvider<T>() {
-
-                    @Override
-                    public int getRequestCode() {
-                        return requestCode;
-                    }
-
-                    @Override
-                    public Call<T> execute(int requestCode) {
-                        return call;
-                    }
-
-                    @Override
-                    public CacheStrategy getCacheStrategy() {
-                        return cacheStrategy;
-                    }
-
-                };
+            if (this.xCall == null) {
+                throw new NullPointerException("没有call对象？");
             }
-            HttpRequester<T> httpRequester = new HttpRequester<T>(this);
+            xCall.cacheStrategy(cacheStrategy);
+            xCall.requestCode(requestCode);
+            xCall.async(async);
+            xCall.exceptionProxy(exceptionProxy);
+            HttpRequester<T> httpRequester = new HttpRequester<>(this);
             return httpRequester;
         }
 
@@ -143,23 +88,7 @@ public final class HttpRequester<T> {
             return httpRequester.request();
         }
 
-        public Builder<T> provider(IHttpRequestProvider<T> httpRequestProvider) {
-            this.httpRequestProvider = httpRequestProvider;
-            return this;
-        }
-
-        /**
-         * 设置是否由系统代理异常的处理，如果false，则出现异常不会提示，需要用户自己处理。 默认为true
-         *
-         * @param exceptionProxy
-         * @return
-         */
-        public Builder<T> exceptionProxy(boolean exceptionProxy) {
-            this.exceptionProxy = exceptionProxy;
-            return this;
-        }
-
-        public boolean isAsync() {
+        boolean isAsync() {
             return async;
         }
 
@@ -171,6 +100,21 @@ public final class HttpRequester<T> {
          */
         public Builder<T> setAsync(boolean async) {
             this.async = async;
+            return this;
+        }
+
+        public Builder<T> async() {
+            this.setAsync(true);
+            return this;
+        }
+
+        public Builder<T> sync() {
+            this.setAsync(false);
+            return this;
+        }
+
+        public Builder<T> exceptionProxy(boolean exceptionProxy) {
+            this.exceptionProxy = exceptionProxy;
             return this;
         }
 
@@ -203,7 +147,12 @@ public final class HttpRequester<T> {
          * @return
          */
         public Builder<T> call(Call<T> call) {
-            this.call = call;
+            xCall = new XCall<>(call);
+            return this;
+        }
+
+        public Builder<T> call(ICall<T> xCall) {
+            this.xCall = xCall;
             return this;
         }
 
@@ -238,10 +187,6 @@ public final class HttpRequester<T> {
             return context;
         }
 
-        IHttpRequestProvider<T> getHttpRequestProvider() {
-            return httpRequestProvider;
-        }
-
         IHttpRequestListener<T> getHttpRequestListener() {
             return httpRequestListener;
         }
@@ -252,42 +197,24 @@ public final class HttpRequester<T> {
 
     }
 
-    private HttpRequester(Builder builder) {
+    private HttpRequester(Builder<T> builder) {
         this.mContext = builder.getContext();
-        this.mHttpRequestProvider = builder.getHttpRequestProvider();
-        this.isAsync = builder.isAsync();
-        this.mHttpHandler = new HttpHandler(this.mContext, builder.getHttpRequestListener(),
-                builder.getHttpResponseListener());
-        // 进度监听
-        mHttpResponseProgressInterceptor.setProgressListener(new ProgressListener() {
-
-            @Override
-            public void update(boolean multipart, long bytesRead, long contentLength, boolean done) {
-                mHttpHandler.responseProgress(multipart, bytesRead, contentLength, done);
-            }
-        });
-        mHttpRequestProgressInterceptor.setProgressListener(new ProgressListener() {
-
-            @Override
-            public void update(boolean multipart, long bytesRead, long contentLength, boolean done) {
-                mHttpHandler.requestProgress(multipart, bytesRead, contentLength, done);
-            }
-        });
-    }
-
-    public static void setDefaultHttpExceptionHandler(
-            IHttpExceptionHandler httpResponseExceptionHandler) {
-        mHttpExceptionHandler = httpResponseExceptionHandler;
-    }
-
-    public static <T> void setDefaultHttpRequestListener(
-            IHttpRequestListener<T> httpRequestListener) {
-        mDefaultHttpRequestListener = httpRequestListener;
+        this.mCall = builder.xCall;
+        this.mHttpRequestListener = builder.getHttpRequestListener();
+        this.mHttpResponseListener = builder.getHttpResponseListener();
     }
 
     public static <API> API registerAPI(String baseUrl, Class<API> apiClass) {
         Retrofit retrofit = new Retrofit.Builder().baseUrl(baseUrl).client(getOkHttpClient())
                 .addConverterFactory(GsonConverterFactory.create()).build();
+        API api = retrofit.create(apiClass);
+        apis.put(apiClass, api);
+        return api;
+    }
+
+    public static <API> API registerXAPI(String baseUrl, Class<API> apiClass) {
+        Retrofit retrofit = new Retrofit.Builder().baseUrl(baseUrl).client(getOkHttpClient())
+                .addConverterFactory(GsonConverterFactory.create()).addCallAdapterFactory(new XCallAdapterFactory()).build();
         API api = retrofit.create(apiClass);
         apis.put(apiClass, api);
         return api;
@@ -303,7 +230,7 @@ public final class HttpRequester<T> {
 
     private static void initDefaultOkHttpClient(Context context) {
         int cacheSize = 10 * 1024 * 1024; // 10 MiB
-        File cacheDirectory = new File(getDiskFileDir(context), "okhttp");
+        File cacheDirectory = new File(Util.getDiskFileDir(context), "okhttp");
         Cache cache = new Cache(cacheDirectory, cacheSize);
         OkHttpClient.Builder builder = new OkHttpClient.Builder().connectTimeout(1, TimeUnit.MINUTES)
                 .readTimeout(1, TimeUnit.MINUTES).writeTimeout(1, TimeUnit.MINUTES).cache(cache);
@@ -314,26 +241,8 @@ public final class HttpRequester<T> {
         initDefaultOkHttpClient(context.getApplicationContext());
     }
 
-    private static String getDiskFileDir(Context context) {
-        String cachePath = null;
-        if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())
-                || !Environment.isExternalStorageRemovable()) {
-            cachePath = context.getExternalFilesDir(null).getPath();
-        } else {
-            cachePath = context.getFilesDir().getPath();
-        }
-        return cachePath;
-    }
-
-    public static void setAuthTokenHandler(AuthTokenHandler handler) {
-        mAuthTokenHandler = handler;
-    }
-
     public static void setOkHttpClient(OkHttpClient.Builder builder) {
-        builder.addInterceptor(mHttpRequestCacheInterceptor)
-                .addInterceptor(mHttpRequestProgressInterceptor)
-                .addInterceptor(mHttpResponseProgressInterceptor).authenticator(mAuthenticatorInterceptor)
-                .addNetworkInterceptor(mAuthTokenInterceptor);
+        XCall.init(builder);
         mOkHttpClient = builder.build();
     }
 
@@ -344,139 +253,18 @@ public final class HttpRequester<T> {
         return mOkHttpClient;
     }
 
-    /**
-     * 当验证失败的时候处理的一个拦截器
-     */
-    private static class AuthenticatorInterceptor implements Authenticator {
-
-        @Override
-        public Request authenticate(Route route, final Response response) throws IOException {
-            if (mAuthTokenHandler == null) {
-                return null;
-            }
-            String authValue = mAuthTokenHandler.getAuthValue(true);
-            if (authValue == null) {
-                return null;
-            }
-            return response.request().newBuilder().addHeader(mAuthTokenHandler.getAuthName(), authValue)
-                    .build();
-        }
+    public static void setAuthTokenHandler(AuthTokenHandler handler) {
+        XCall.setAuthTokenHandler(handler);
     }
 
-    /**
-     * 负责给每一个请求添加token
-     */
-    private static class AuthTokenInterceptor implements Interceptor {
-
-        @Override
-        public Response intercept(Interceptor.Chain chain) throws IOException {
-            Request originalRequest = chain.request();
-            if (mAuthTokenHandler == null) {
-                return chain.proceed(originalRequest);
-            }
-            if (mAuthTokenHandler.isIgnoreUrl(originalRequest.url().toString())) {
-                return chain.proceed(originalRequest);
-            }
-            String authValue = mAuthTokenHandler.getAuthValue(false);
-            if (authValue == null || alreadyHasAuthorizationHeader(originalRequest)) {
-                return chain.proceed(originalRequest);
-            }
-            Request authorised =
-                    originalRequest.newBuilder().header(mAuthTokenHandler.getAuthName(), authValue).build();
-            return chain.proceed(authorised);
-        }
-
-        private static boolean alreadyHasAuthorizationHeader(Request originalRequest) {
-            return originalRequest.header(mAuthTokenHandler.getAuthName()) != null;
-        }
-
+    public static void setDefaultHttpExceptionHandler(
+            IHttpExceptionHandler httpExceptionHandler) {
+        XCall.setDefaultHttpExceptionHandler(httpExceptionHandler);
     }
 
-    /**
-     * 对response进行进度监听的拦截器
-     *
-     * @author Yanghuiqiang
-     *         <p>
-     *         2016-1-15
-     */
-    private static class HttpResponseProgressInterceptor implements Interceptor {
-        private ProgressListener progressListener;
-
-        public void setProgressListener(ProgressListener progressListener) {
-            this.progressListener = progressListener;
-        }
-
-        @Override
-        public Response intercept(Chain chain) throws IOException {
-            Response originalResponse = chain.proceed(chain.request());
-            return originalResponse.newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener)).build();
-        }
-
-    }
-
-    /**
-     * 对request进度监听的拦截器
-     *
-     * @author Yanghuiqiang
-     *         <p>
-     *         2016-1-15
-     */
-    private static class HttpRequestProgressInterceptor implements Interceptor {
-        private ProgressListener progressListener;
-
-        public void setProgressListener(ProgressListener progressListener) {
-            this.progressListener = progressListener;
-        }
-
-        @Override
-        public Response intercept(Chain chain) throws IOException {
-            Request request = chain.request();
-            if (request.body() != null) {
-                request = request.newBuilder()
-                        .post(new ProgressListener.ProgressRequestBody(request.body(), progressListener)).build();
-            }
-            return chain.proceed(request);
-        }
-
-    }
-
-    /**
-     * 自定义缓存处理的拦截器
-     */
-    private static class HttpRequestCacheInterceptor implements Interceptor {
-        private CacheStrategy cacheStrategy;
-
-        public void setCacheStrategy(CacheStrategy cacheStrategy) {
-            this.cacheStrategy = cacheStrategy;
-        }
-
-        @Override
-        public Response intercept(Chain chain) throws IOException {
-            Request request = chain.request();
-            String cacheHeaderName = "Cache-Control";
-            String cacheHeaderValue = "max-stale=" + CACHE_MAX_STALE;
-            switch (cacheStrategy) {
-                case BOTH:
-                    break;
-                case NOCACHE:
-                    cacheHeaderValue = "no-cache";
-                    break;
-                case ONLY_CACHE:
-                    cacheHeaderValue = "only-if-cached";
-                    break;
-                case ONLY_NETWORK:
-                    cacheHeaderValue = "no-cache";
-                    break;
-                default:
-                    break;
-            }
-            request = request.newBuilder().removeHeader(cacheHeaderName)
-                    .addHeader(cacheHeaderName, cacheHeaderValue).build();
-            Response response = chain.proceed(request);
-            return response;
-        }
-
+    public static <T> void setDefaultHttpRequestListener(
+            IHttpRequestListener<T> httpRequestListener) {
+        XCall.setDefaultHttpRequestListener(httpRequestListener);
     }
 
     /**
@@ -485,7 +273,8 @@ public final class HttpRequester<T> {
      * @return
      */
     public HttpRequester<T> request() {
-        return handleRequest();
+        mCall.execute(mContext, mHttpRequestListener, mHttpResponseListener);
+        return this;
     }
 
     /**
@@ -497,35 +286,6 @@ public final class HttpRequester<T> {
         }
     }
 
-    public static void cancel(Context context) {
-        List<HttpRequester<?>> httpRequesterList = mHttpRequester.get(context);
-        if (httpRequesterList != null) {
-            for (HttpRequester<?> httpRequester : httpRequesterList) {
-                httpRequester.cancel();
-            }
-            mHttpRequester.remove(context);
-        }
-    }
-
-    private static void put(Context context, HttpRequester<?> httpRequester) {
-        List<HttpRequester<?>> list = mHttpRequester.get(context);
-        if (list == null) {
-            list = new ArrayList<>();
-            mHttpRequester.put(context, list);
-        }
-        list.add(httpRequester);
-    }
-
-    private static void remove(Context context, HttpRequester<?> httpRequester) {
-        List<HttpRequester<?>> list = mHttpRequester.get(context);
-        if (list != null) {
-            list.remove(httpRequester);
-            if (list.isEmpty()) {
-                mHttpRequester.remove(context);
-            }
-        }
-    }
-
     /**
      * 获取本次请求的response
      * <p>
@@ -533,8 +293,8 @@ public final class HttpRequester<T> {
      *
      * @return
      */
-    public retrofit2.Response getResponse() {
-        return mResponse;
+    public Response getResponse() {
+        return mCall.getResponse();
     }
 
     /**
@@ -543,66 +303,8 @@ public final class HttpRequester<T> {
      * @return
      */
     public T getResponseBody() {
-        if (mResponse == null) {
-            return null;
-        }
-        return mResponse.body();
+        return mCall.getResponseBody();
     }
 
-    /**
-     * 缓存处理
-     *
-     * @param cacheStrategy
-     */
-    private void handleCache(final CacheStrategy cacheStrategy) {
-        mHttpRequestCacheInterceptor.setCacheStrategy(cacheStrategy);
-    }
-
-    /**
-     * 请求处理
-     *
-     * @return
-     */
-    private HttpRequester<T> handleRequest() {
-        put(mContext, this);
-        handleCache(this.mHttpRequestProvider.getCacheStrategy());
-        final int requestCode = this.mHttpRequestProvider.getRequestCode();
-        try {
-            // 回调处理
-            Callback<T> callback = new Callback<T>() {
-
-                @Override
-                public void onResponse(Call<T> call, retrofit2.Response<T> response) {
-                    remove(mContext, HttpRequester.this);
-                    mResponse = response;
-                    mHttpHandler.responseSuccess(response, requestCode);
-                }
-
-                @Override
-                public void onFailure(Call<T> call, Throwable t) {
-                    remove(mContext, HttpRequester.this);
-                    mHttpHandler.responseException(t, requestCode);
-                }
-            };
-            Call<T> call = this.mHttpRequestProvider.execute(requestCode);
-            if (call == null) {
-                throw new NullPointerException("没有指定call。");
-            }
-            mCall = call;
-            mHttpHandler.requestStart(call, requestCode);
-            // 真正开始请求的地方
-            if (this.isAsync) {
-                // 异步执行
-                call.enqueue(callback);
-            } else {
-                // 同步执行
-                callback.onResponse(call, call.execute());
-            }
-        } catch (Throwable t) {
-            remove(mContext, HttpRequester.this);
-            mHttpHandler.requestException(t, requestCode);
-        }
-        return this;
-    }
 
 }

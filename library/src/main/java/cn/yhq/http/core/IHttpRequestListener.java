@@ -4,7 +4,7 @@ import android.content.Context;
 
 public interface IHttpRequestListener<T> {
 
-    void onStart(Context context, HttpRequester<T> httpRequester, int requestCode);
+    void onStart(Context context, ICancelable cancelable, int requestCode);
 
     void onException(int requestCode, Throwable t);
 

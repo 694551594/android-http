@@ -5,7 +5,7 @@ import android.content.Context;
 public class HttpRequestListener<T> implements IHttpRequestListener<T> {
 
     @Override
-    public void onStart(Context context, HttpRequester<T> httpRequester, int requestCode) {
+    public void onStart(Context context, ICancelable cancelable, int requestCode) {
 
     }
 

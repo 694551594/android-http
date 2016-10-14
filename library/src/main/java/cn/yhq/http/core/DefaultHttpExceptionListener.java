@@ -1,8 +1,6 @@
 package cn.yhq.http.core;
 
 import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.widget.Toast;
 
 import org.apache.http.conn.ConnectTimeoutException;
@@ -23,7 +21,7 @@ class DefaultHttpExceptionListener implements IHttpExceptionHandler {
         ErrorMessage errorMsg = null;
         if (t instanceof ConnectException || t instanceof UnknownHostException) {
             // 网络连接错误
-            if (!isNetworkConnected(context)) {
+            if (!Util.isNetworkConnected(context)) {
                 errorMsg = ErrorMessage.ERR_HTTP_NOCONNECTION;
             } else {
                 errorMsg = ErrorMessage.ERR_HTTP_SERVICECONNECTION;
@@ -42,17 +40,4 @@ class DefaultHttpExceptionListener implements IHttpExceptionHandler {
         }
     }
 
-    public static boolean isNetworkConnected(Context context) {
-        NetworkInfo ni = getActiveNetwork(context);
-        return ni != null && ni.isConnectedOrConnecting();
-    }
-
-    public static NetworkInfo getActiveNetwork(Context context) {
-        if (context == null) return null;
-        ConnectivityManager mConnMgr =
-                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        if (mConnMgr == null) return null;
-        NetworkInfo aActiveInfo = mConnMgr.getActiveNetworkInfo();
-        return aActiveInfo;
-    }
 }

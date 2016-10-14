@@ -1,4 +1,4 @@
-package cn.yhq.http.core;
+package cn.yhq.http.core.interceptor;
 
 import java.io.IOException;
 
@@ -12,7 +12,7 @@ import okio.Okio;
 import okio.Source;
 
 
-public class ProgressResponseBody extends ResponseBody {
+class ProgressResponseBody extends ResponseBody {
   private final ResponseBody responseBody;
   private final ProgressListener progressListener;
   private BufferedSource bufferedSource;

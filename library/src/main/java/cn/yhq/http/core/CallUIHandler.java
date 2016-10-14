@@ -7,7 +7,6 @@ import android.os.Message;
 
 import java.lang.ref.WeakReference;
 
-import retrofit2.Call;
 import retrofit2.Response;
 
 /**
@@ -15,7 +14,7 @@ import retrofit2.Response;
  * <p>
  * Created by Yanghuiqiang on 2016/8/11.
  */
-public final class HttpHandler<T> extends Handler {
+final class CallUIHandler<T> extends Handler {
     private IHttpRequestListener<T> mHttpRequestListener;
     private IHttpResponseListener<T> mHttpResponseListener;
     // 弱引用，因为可能会造成内存泄漏
@@ -34,12 +33,9 @@ public final class HttpHandler<T> extends Handler {
     // 响应失败
     public final static int MSG_RESPONSE_FAILURE = 6;
 
-    public HttpHandler(Context context, IHttpRequestListener<T> httpRequestListener,
-                       IHttpResponseListener<T> httpResponseListener) {
+    public CallUIHandler(Context context) {
         super(Looper.getMainLooper());
         this.mContextRef = new WeakReference<>(context);
-        this.mHttpRequestListener = httpRequestListener;
-        this.mHttpResponseListener = httpResponseListener;
     }
 
     private static class ProgressInfo {
@@ -49,8 +45,8 @@ public final class HttpHandler<T> extends Handler {
         boolean done;
     }
 
-    private static class RequestInfo<T> {
-        Call<T> call;
+    private static class RequestInfo {
+        ICancelable cancelable;
         int requestCode;
         Throwable throwable;
     }
@@ -93,14 +89,14 @@ public final class HttpHandler<T> extends Handler {
     }
 
     private void handleRequestMessage(Message msg) {
-        RequestInfo<T> requestInfo = (RequestInfo<T>) msg.obj;
-        Call<T> call = requestInfo.call;
+        RequestInfo requestInfo = (RequestInfo) msg.obj;
+        ICancelable cancelable = requestInfo.cancelable;
         int requestCode = requestInfo.requestCode;
         Throwable t = requestInfo.throwable;
         switch (msg.what) {
             case MSG_REQUEST_START:
                 if (mHttpRequestListener != null) {
-                    mHttpRequestListener.onStart(this.mContextRef.get(), call, requestCode);
+                    mHttpRequestListener.onStart(this.mContextRef.get(), cancelable, requestCode);
                 }
                 break;
             case MSG_REQUEST_EXCEPTION:
@@ -150,15 +146,15 @@ public final class HttpHandler<T> extends Handler {
         }
     }
 
-    public void requestStart(Call<T> call, int requestCode) {
-        RequestInfo<T> requestInfo = new RequestInfo<T>();
-        requestInfo.call = call;
+    public void requestStart(ICancelable cancelable, int requestCode) {
+        RequestInfo requestInfo = new RequestInfo();
+        requestInfo.cancelable = cancelable;
         requestInfo.requestCode = requestCode;
         this.sendMessage(Message.obtain(this, MSG_REQUEST_START, requestInfo));
     }
 
     public void requestException(Throwable throwable, int requestCode) {
-        RequestInfo<T> requestInfo = new RequestInfo<T>();
+        RequestInfo requestInfo = new RequestInfo();
         requestInfo.throwable = throwable;
         requestInfo.requestCode = requestCode;
         this.sendMessage(Message.obtain(this, MSG_REQUEST_EXCEPTION, requestInfo));
@@ -200,5 +196,13 @@ public final class HttpHandler<T> extends Handler {
     public void responseProgress(boolean multipart, long bytesRead, long contentLength,
                                  boolean done) {
         progress(MSG_RESPONSE_PROGRESS, multipart, bytesRead, contentLength, done);
+    }
+
+    public void setHttpRequestListener(IHttpRequestListener<T> httpRequestListener) {
+        this.mHttpRequestListener = httpRequestListener;
+    }
+
+    public void setHttpResponseListener(IHttpResponseListener<T> httpResponseListener) {
+        this.mHttpResponseListener = httpResponseListener;
     }
 }
