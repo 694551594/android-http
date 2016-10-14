@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.novoda.bintray-release'
 
 android {
     compileSdkVersion 23
@@ -36,3 +37,11 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
+publish {
+    artifactId = 'android-http'
+    userOrg = rootProject.userOrg
+    groupId = rootProject.groupId
+    publishVersion = 2.0
+    desc = rootProject.description
+    website = rootProject.website
+}
