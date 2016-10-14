@@ -202,10 +202,6 @@ public final class HttpRequester<T> {
         this.mCall = builder.xCall;
         this.mHttpRequestListener = builder.getHttpRequestListener();
         this.mHttpResponseListener = builder.getHttpResponseListener();
-
-        if (mOkHttpClient == null) {
-            init(mContext);
-        }
     }
 
     public static <API> API registerAPI(String baseUrl, Class<API> apiClass) {
