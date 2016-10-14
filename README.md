@@ -5,7 +5,7 @@
 ####注意：此框架仅适用于使用了retrofit2+okhttp3作为http请求的应用。
 
 #gradle配置
-`compile 'cn.yhq:android-http:1.1'`
+`compile 'cn.yhq:android-http:2.0'`
 
 #使用方式
 ###1、初始化
@@ -53,6 +53,7 @@ HttpRequester.setAuthTokenHandler(new AuthTokenHandler() {
       }
     });
 ```
+
 ###4、编写API接口
 retrofit2最大的特色啦，把一个http请求使用注解的方法去调用，我们这里以获取天气预报的接口为例：
 ```java
@@ -63,11 +64,13 @@ public interface API {
 }
 
 ```
+
 ###5、注册接口
 使用HttpRequester将第四步的接口注册进来：
 ```java
 HttpRequester.registerAPI("http://wthrcdn.etouch.cn", API.class);
 ```
+
 ###6、请求数据
 ```java
 HttpRequester<WeatherInfo> httpRequester =
@@ -94,52 +97,126 @@ httpRequester.cancel();
 本库也支持同步请求，同步请求适合在线程里面请求数据。在构建请求器的时候设置``.setAsync(false)``即可。
 ```java
  new Thread(new Runnable() {
-              @Override
-              public void run() {
-                HttpRequester<WeatherInfo> httpRequester =
-                    new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                        .call(getAPI().getWeatherInfo("北京")).setAsync(false)
-                        .listener(new HttpResponseListener<WeatherInfo>() {
-                          @Override
-                          public void onResponse(Context context, int requestCode,
-                              WeatherInfo response, boolean isFromCache) {
-                            super.onResponse(context, requestCode, response, isFromCache);
-                            // UI线程
-                            Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
-                                    .show();
-                          }
-                        }).request();
-                // IO线程
-                WeatherInfo weatherInfo = httpRequester.getResponseBody();
-                System.out.println(weatherInfo);
-              }
-            }).start();
+      @Override
+      public void run() {
+        HttpRequester<WeatherInfo> httpRequester =
+            new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
+                .call(getAPI().getWeatherInfo("北京")).setAsync(false)
+                .listener(new HttpResponseListener<WeatherInfo>() {
+                  @Override
+                  public void onResponse(Context context, int requestCode,
+                      WeatherInfo response, boolean isFromCache) {
+                    super.onResponse(context, requestCode, response, isFromCache);
+                    // UI线程
+                    Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
+                            .show();
+                  }
+                }).request();
+        // IO线程
+        WeatherInfo weatherInfo = httpRequester.getResponseBody();
+        System.out.println(weatherInfo);
+      }
+ }).start();
 ```
 
 这里要说明的是：同步请求获取返回数据有两种方式，1、调用``httpRequester.getResponseBody()``直接返回响应实体，此操作一般在IO线程里面使用。2、添加HttpResponseListener监听器进行回调，在回调参数里面可以拿到实体，此回调方法运行在UI线程里。所以大家可以根据实际情况去选择拿到实体的方式。
 
-###8、自定义异常处理
-此框架中自带了异常处理器，如果你想自定义异常处理器，可以设置exceptionProxy=false：
+###8、自定义请求监听器
+如果你想自定义请求的时候展现的请求对话框，你需要调用HttpRequester.setDefaultHttpRequestListener(IHttpRequestListener<T> httpRequestListener)方法设置你自己的请求监听器：
+```java
+HttpRequester.setDefaultHttpRequestListener(new IHttpRequestListener<T>() {
+    private IDialog mLoadingDialog;
+       
+    @Override
+    public void onStart(Context context, final ICancelable cancelable, int requestCode) {
+        this.mCancelable = cancelable;
+        mLoadingDialog = DialogBuilder.loadingDialog(context).setOnCancelListener(new OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                cancelable.cancel();
+            }
+        }).show();
+    }
 
+    @Override
+    public void onComplete(int requestCode) {
+        mLoadingDialog.dismiss();
+    }
+
+});
+```
+
+当然，如果你在单次请求中不想使用请求监听器，你可以在构建HttpRequester单次请求器的时候，将IHttpRequestListener设置为null即可，其他请求不会受影响：
 ```java
 HttpRequester<WeatherInfo> httpRequester =
     new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-        .call(getAPI().getWeatherInfo("北京")).exceptionProxy(false)
+        .call(getAPI().getWeatherInfo("北京"))
+        .listener((IHttpRequestListener<T>)null)
         .listener(new HttpResponseListener<WeatherInfo>() {
-          @Override
-          public void onResponse(Context context, int requestCode, WeatherInfo response,
-              boolean isFromCache) {
-            super.onResponse(context, requestCode, response, isFromCache);
-            Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
-                .show();
-          }
-
-          @Override
-          public void onException(Context context, Throwable t) {
-            super.onException(context, t);
-            // 自定义异常处理
-          }
+              @Override
+              public void onResponse(Context context, int requestCode, WeatherInfo response,
+                  boolean isFromCache) {
+                super.onResponse(context, requestCode, response, isFromCache);
+                Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
+                    .show();
+              }
+    
+              @Override
+              public void onException(Context context, Throwable t) {
+                super.onException(context, t);
+                // 单次请求异常处理
+              }
         }).request();
 ```
 
-这样，你就可以自己处理异常情况了。
+###9、自定义异常处理
+异常处理分为全局异常与单次请求异常。
+（1）全局异常处理器：IHttpExceptionHandler，负责处理比如无网络，请求超时等等异常。全局异常处理器在每次请求发生异常的时候都会去调用处理。如果你想自定义全局异常处理器，需要调用HttpRequester.setDefaultHttpExceptionHandler(IHttpExceptionHandler httpExceptionHandler)方法：
+```java
+HttpRequester.setDefaultHttpExceptionHandler(new IHttpExceptionHandler() {
+ @Override
+    public void onException(Context context, Throwable t) {
+    }
+});
+```
+（2）单次请求异常处理：在构建HttpRequester单次请求器的时候，可以添加HttpResponseListener监听器，此监听器其中的onException方法就是此次请求的异常处理回调，如果有需要，你可以在此方法做一些处理：
+```java
+HttpRequester<WeatherInfo> httpRequester =
+    new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
+        .call(getAPI().getWeatherInfo("北京"))
+        .listener(new HttpResponseListener<WeatherInfo>() {
+              @Override
+              public void onResponse(Context context, int requestCode, WeatherInfo response,
+                  boolean isFromCache) {
+                super.onResponse(context, requestCode, response, isFromCache);
+                Toast.makeText(context, new Gson().toJson(response), Toast.LENGTH_LONG)
+                    .show();
+              }
+    
+              @Override
+              public void onException(Context context, Throwable t) {
+                super.onException(context, t);
+                // 单次请求异常处理
+              }
+        }).request();
+```
+（3）禁用全局异常处理器：如果你某一次请求不希望使用全局异常处理器处理此次异常，你可以设置exceptionProxy=false来禁用此次的全局异常处理，其他请求不受影响。
+```java
+new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
+    .call(HttpRequester.getAPI(API.class).getWeatherInfo("北京"))
+    .exceptionProxy(false)
+    .listener(new HttpResponseListener<WeatherInfo>() {
+        @Override
+        public void onResponse(Context context, int requestCode, WeatherInfo response,
+                               boolean isFromCache) {
+            super.onResponse(context, requestCode, response, isFromCache);
+            toast(new Gson().toJson(response));
+        }
+
+        @Override
+        public void onException(Context context, Throwable t) {
+            super.onException(context, t);
+            // 单次请求异常处理
+        }
+}).request();
+```
