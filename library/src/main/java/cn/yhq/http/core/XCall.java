@@ -35,7 +35,7 @@ final class XCall<T> implements ICall<T> {
 
     // 缓存有效时间
     private final static int CACHE_MAX_STALE = 7 * 24 * 3600;
-    private IHttpRequestListener<T> mHttpRequestListener;
+    private IHttpRequestListener mHttpRequestListener;
     private IHttpResponseListener<T> mHttpResponseListener;
     private Call<T> mCall;
     private Response<T> mResponse;
@@ -81,7 +81,7 @@ final class XCall<T> implements ICall<T> {
         }
     }
 
-    class HttpRequestListenerProxy extends HttpRequestListener<T> {
+    class HttpRequestListenerProxy extends HttpRequestListener {
 
         HttpRequestListenerProxy() {
         }
@@ -148,8 +148,8 @@ final class XCall<T> implements ICall<T> {
         mHttpExceptionHandler = httpExceptionHandler;
     }
 
-    public static <T> void setDefaultHttpRequestListener(
-            IHttpRequestListener<T> httpRequestListener) {
+    public static void setDefaultHttpRequestListener(
+            IHttpRequestListener httpRequestListener) {
         mDefaultHttpRequestListener = httpRequestListener;
     }
 
@@ -187,7 +187,7 @@ final class XCall<T> implements ICall<T> {
     }
 
     @Override
-    public ICall<T> execute(Context context, IHttpRequestListener<T> requestListener, IHttpResponseListener<T> responseListener) {
+    public ICall<T> execute(Context context, IHttpRequestListener requestListener, IHttpResponseListener<T> responseListener) {
         // 拦截器
         mHttpResponseProgressInterceptor.setProgressListener(mResponseProgressListener);
         mHttpRequestProgressInterceptor.setProgressListener(mRequestProgressListener);

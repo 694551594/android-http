@@ -16,7 +16,7 @@ public interface ICall<T> extends ICancelable {
 
     ICall<T> execute(Context context, IHttpResponseListener<T> listener);
 
-    ICall<T> execute(Context context, IHttpRequestListener<T> requestListener, IHttpResponseListener<T> responseListener);
+    ICall<T> execute(Context context, IHttpRequestListener requestListener, IHttpResponseListener<T> responseListener);
 
     ICall<T> async(boolean isAsync);
 

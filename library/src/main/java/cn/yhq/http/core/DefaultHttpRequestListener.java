@@ -9,12 +9,11 @@ import cn.yhq.dialog.core.IDialog;
 /**
  * 请求监听，实现请求过程中显示loading对话框
  *
- * @param <T>
  * @author Yanghuiqiang 2015-10-9
  */
-class DefaultHttpRequestListener<T>
+class DefaultHttpRequestListener
         extends
-        HttpRequestListener<T> implements
+        HttpRequestListener implements
         DialogInterface.OnCancelListener {
     private ICancelable mCancelable;
     private IDialog mLoadingDialog;

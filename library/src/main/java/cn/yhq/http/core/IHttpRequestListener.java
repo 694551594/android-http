@@ -2,7 +2,7 @@ package cn.yhq.http.core;
 
 import android.content.Context;
 
-public interface IHttpRequestListener<T> {
+public interface IHttpRequestListener {
 
     void onStart(Context context, ICancelable cancelable, int requestCode);
 

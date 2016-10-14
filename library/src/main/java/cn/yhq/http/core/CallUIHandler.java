@@ -15,7 +15,7 @@ import retrofit2.Response;
  * Created by Yanghuiqiang on 2016/8/11.
  */
 final class CallUIHandler<T> extends Handler {
-    private IHttpRequestListener<T> mHttpRequestListener;
+    private IHttpRequestListener mHttpRequestListener;
     private IHttpResponseListener<T> mHttpResponseListener;
     // 弱引用，因为可能会造成内存泄漏
     private WeakReference<Context> mContextRef;
@@ -198,7 +198,7 @@ final class CallUIHandler<T> extends Handler {
         progress(MSG_RESPONSE_PROGRESS, multipart, bytesRead, contentLength, done);
     }
 
-    public void setHttpRequestListener(IHttpRequestListener<T> httpRequestListener) {
+    public void setHttpRequestListener(IHttpRequestListener httpRequestListener) {
         this.mHttpRequestListener = httpRequestListener;
     }
 

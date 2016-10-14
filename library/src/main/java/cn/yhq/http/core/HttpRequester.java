@@ -26,11 +26,11 @@ public final class HttpRequester<T> {
     private static OkHttpClient mOkHttpClient;
     private Context mContext;
     private ICall<T> mCall;
-    private IHttpRequestListener<T> mHttpRequestListener;
+    private IHttpRequestListener mHttpRequestListener;
     private IHttpResponseListener<T> mHttpResponseListener;
 
     public static class Builder<T> {
-        private IHttpRequestListener<T> httpRequestListener;
+        private IHttpRequestListener httpRequestListener;
         private IHttpResponseListener<T> httpResponseListener;
         private IHttpResponseCommonListener httpResponseCommonListener;
 
@@ -162,7 +162,7 @@ public final class HttpRequester<T> {
          * @param httpRequestListener
          * @return
          */
-        public Builder<T> listener(IHttpRequestListener<T> httpRequestListener) {
+        public Builder<T> listener(IHttpRequestListener httpRequestListener) {
             this.httpRequestListener = httpRequestListener;
             return this;
         }
@@ -187,7 +187,7 @@ public final class HttpRequester<T> {
             return context;
         }
 
-        IHttpRequestListener<T> getHttpRequestListener() {
+        IHttpRequestListener getHttpRequestListener() {
             return httpRequestListener;
         }
 
@@ -263,7 +263,7 @@ public final class HttpRequester<T> {
     }
 
     public static <T> void setDefaultHttpRequestListener(
-            IHttpRequestListener<T> httpRequestListener) {
+            IHttpRequestListener httpRequestListener) {
         XCall.setDefaultHttpRequestListener(httpRequestListener);
     }
 
