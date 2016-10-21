@@ -81,7 +81,7 @@ final class CallUIHandler<T> extends Handler {
                     mHttpResponseListener.onException(context, t);
                 }
                 if (mHttpRequestListener != null) {
-                    mHttpRequestListener.onException(requestCode, t);
+                    mHttpRequestListener.onException(context, requestCode, t);
                     mHttpRequestListener.onComplete(requestCode);
                 }
                 break;
@@ -93,6 +93,10 @@ final class CallUIHandler<T> extends Handler {
         ICancelable cancelable = requestInfo.cancelable;
         int requestCode = requestInfo.requestCode;
         Throwable t = requestInfo.throwable;
+        Context context = this.mContextRef.get();
+        if (context == null) {
+            return;
+        }
         switch (msg.what) {
             case MSG_REQUEST_START:
                 if (mHttpRequestListener != null) {
@@ -101,7 +105,7 @@ final class CallUIHandler<T> extends Handler {
                 break;
             case MSG_REQUEST_EXCEPTION:
                 if (mHttpRequestListener != null) {
-                    mHttpRequestListener.onException(requestCode, t);
+                    mHttpRequestListener.onException(context, requestCode, t);
                     mHttpRequestListener.onComplete(requestCode);
                 }
                 break;
