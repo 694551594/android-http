@@ -10,8 +10,7 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 
-import cn.yhq.adapter.core.ViewHolder;
-import cn.yhq.adapter.list.SimpleListAdapter;
+import cn.yhq.adapter.list.SimpleStringListAdapter;
 import cn.yhq.http.core.AuthTokenHandler;
 import cn.yhq.http.core.HttpRequester;
 import cn.yhq.http.core.HttpResponseListener;
@@ -27,22 +26,16 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ListView listView = (ListView) this.findViewById(R.id.listview);
 
-        final SimpleListAdapter<String> adapter =
-                SimpleListAdapter.create(this, new String[]{
-                                "普通异步请求",
-                                "普通同步请求",
-                                "XAPI直接异步请求",
-                                "XAPI使用HttpRequester异步请求",
-                                "XAPI直接同步请求",
-                                "XAPI使用HttpRequester同步请求",
-                                "使用自定义请求监听器"
-                        },
-                        android.R.layout.simple_list_item_1, new SimpleListAdapter.IItemViewSetup<String>() {
-                            @Override
-                            public void setupView(ViewHolder viewHolder, int position, String entity) {
-                                viewHolder.bindTextData(android.R.id.text1, entity);
-                            }
-                        });
+        final SimpleStringListAdapter adapter =
+                SimpleStringListAdapter.create(this, new String[]{
+                        "普通异步请求",
+                        "普通同步请求",
+                        "XAPI直接异步请求",
+                        "XAPI使用HttpRequester异步请求",
+                        "XAPI直接同步请求",
+                        "XAPI使用HttpRequester同步请求",
+                        "使用自定义请求监听器"
+                });
 
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {

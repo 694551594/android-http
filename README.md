@@ -5,7 +5,7 @@
 ####注意：此框架仅适用于使用了retrofit2+okhttp3作为http请求的应用。
 
 #gradle配置
-`compile 'cn.yhq:android-http:2.3'`
+`compile 'cn.yhq:android-http:2.4'`
 
 #V2.0版本新的请求方式
 此次更新主要将封装代码转移到新的XCall类里面，然后创建了retrofit2的Call适配器XCallAdapterFactory，扩展了请求数据的方式。
