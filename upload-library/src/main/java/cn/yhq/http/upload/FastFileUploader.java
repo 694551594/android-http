@@ -32,6 +32,12 @@ public abstract class FastFileUploader<UploadResponse, FileUploadInfo> extends F
         onUpload(files);
     }
 
+    public final void fastUpload(String file) {
+        List<String> files = new ArrayList<>();
+        files.add(file);
+        this.fastUpload(files);
+    }
+
     public void setOnMd5CheckListener(OnMd5CheckListener listener) {
         md5CheckListener = listener;
     }

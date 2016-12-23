@@ -56,6 +56,12 @@ public abstract class FileUploader<UploadResponse, FileUploadInfo> {
         onUpload(files);
     }
 
+    public final void upload(String file) {
+        List<String> files = new ArrayList<>();
+        files.add(file);
+        this.upload(files);
+    }
+
     protected void dispatchProgress(int progress) {
         mUploadProgressListenerDispatcher.onProgress(progress);
     }
