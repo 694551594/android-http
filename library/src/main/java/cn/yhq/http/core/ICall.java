@@ -20,6 +20,8 @@ public interface ICall<T> extends ICancelable {
 
     ICall<T> async(boolean isAsync);
 
+    ICall<T> cacheStale(int cacheStale);
+
     ICall<T> exceptionProxy(boolean exceptionProxy);
 
     T getResponseBody();

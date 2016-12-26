@@ -42,6 +42,7 @@ final class XCall<T> implements ICall<T> {
     private CallUIHandler mCallUIHandler;
     private int mRequestCode;
     private CacheStrategy mCacheStrategy = CacheStrategy.ONLY_NETWORK;
+    private int mCacheStale = CACHE_MAX_STALE;
     private boolean isAsync = true;
     private boolean isExceptionProxy = true;
 
@@ -194,7 +195,7 @@ final class XCall<T> implements ICall<T> {
         // 拦截器
         mHttpResponseProgressInterceptor.setProgressListener(mResponseProgressListener);
         mHttpRequestProgressInterceptor.setProgressListener(mRequestProgressListener);
-        mHttpRequestCacheInterceptor.setCacheStrategy(mCacheStrategy, CACHE_MAX_STALE);
+        mHttpRequestCacheInterceptor.setCacheStrategy(mCacheStrategy, mCacheStale);
         // 监听器
         this.mCallUIHandler = new CallUIHandler(context);
         this.mHttpRequestListener = requestListener;
@@ -208,6 +209,12 @@ final class XCall<T> implements ICall<T> {
     @Override
     public ICall<T> async(boolean isAsync) {
         this.isAsync = isAsync;
+        return this;
+    }
+
+    @Override
+    public ICall<T> cacheStale(int cacheStale) {
+        this.mCacheStale = cacheStale;
         return this;
     }
 
