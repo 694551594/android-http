@@ -26,6 +26,7 @@ public final class HttpRequester<T> {
     private static OkHttpClient mOkHttpClient;
     private Context mContext;
     private ICall<T> mCall;
+    private ICallResponse<T> mCallResponse;
     private IHttpRequestListener mHttpRequestListener;
     private IHttpResponseListener<T> mHttpResponseListener;
     // 标识是否使用请求监听器
@@ -86,7 +87,7 @@ public final class HttpRequester<T> {
             return httpRequester;
         }
 
-        public HttpRequester<T> request() {
+        public ICallResponse<T> request() {
             HttpRequester<T> httpRequester = build();
             return httpRequester.request();
         }
@@ -278,26 +279,30 @@ public final class HttpRequester<T> {
         return new XCall<>(call);
     }
 
+    public static <T> ICallResponse<T> execute(Context context, Call<T> call, IHttpResponseListener<T> listener) {
+        return new HttpRequester.Builder<T>(context).call(call).listener(listener).request();
+    }
+
     /**
      * 开始请求
      *
      * @return
      */
-    public HttpRequester<T> request() {
+    public ICallResponse<T> request() {
         if (!mRequestListener || mHttpRequestListener != null) {
-            mCall.execute(mContext, mHttpRequestListener, mHttpResponseListener);
+            mCallResponse = mCall.execute(mContext, mHttpRequestListener, mHttpResponseListener);
         } else {
-            mCall.execute(mContext, mHttpResponseListener);
+            mCallResponse = mCall.execute(mContext, mHttpResponseListener);
         }
-        return this;
+        return mCallResponse;
     }
 
     /**
      * 取消本次请求
      */
     public void cancel() {
-        if (mCall != null) {
-            mCall.cancel();
+        if (mCallResponse != null) {
+            mCallResponse.cancel();
         }
     }
 
@@ -309,7 +314,10 @@ public final class HttpRequester<T> {
      * @return
      */
     public Response getResponse() {
-        return mCall.getResponse();
+        if (mCallResponse != null) {
+            return mCallResponse.getResponse();
+        }
+        return null;
     }
 
     /**
@@ -318,7 +326,10 @@ public final class HttpRequester<T> {
      * @return
      */
     public T getResponseBody() {
-        return mCall.getResponseBody();
+        if (mCallResponse != null) {
+            return mCallResponse.getResponseBody();
+        }
+        return null;
     }
 
 
