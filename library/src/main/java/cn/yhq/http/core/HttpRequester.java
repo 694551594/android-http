@@ -32,7 +32,7 @@ public final class HttpRequester<T> {
     // 标识是否使用请求监听器
     private boolean mRequestListener = true;
 
-    public static class Builder<T> {
+    public static class Builder<T> implements ICallBuilder<Builder<T>> {
         private IHttpRequestListener httpRequestListener;
         private IHttpResponseListener<T> httpResponseListener;
         private IHttpResponseCommonListener httpResponseCommonListener;
@@ -43,6 +43,7 @@ public final class HttpRequester<T> {
         private boolean async = true;
         private boolean exceptionProxy = true;
         private boolean requestListener = true;
+        private int cacheStale = XCall.CACHE_MAX_STALE;
 
         private ICall<T> xCall;
 
@@ -83,6 +84,7 @@ public final class HttpRequester<T> {
             xCall.requestCode(requestCode);
             xCall.async(async);
             xCall.exceptionProxy(exceptionProxy);
+            xCall.cacheStale(cacheStale);
             HttpRequester<T> httpRequester = new HttpRequester<>(this);
             return httpRequester;
         }
@@ -117,6 +119,7 @@ public final class HttpRequester<T> {
             return this;
         }
 
+        @Override
         public Builder<T> exceptionProxy(boolean exceptionProxy) {
             this.exceptionProxy = exceptionProxy;
             return this;
@@ -128,8 +131,21 @@ public final class HttpRequester<T> {
          * @param cacheStrategy
          * @return
          */
+        @Override
         public Builder<T> cacheStrategy(CacheStrategy cacheStrategy) {
             this.cacheStrategy = cacheStrategy;
+            return this;
+        }
+
+        @Override
+        public Builder<T> async(boolean isAsync) {
+            this.async = isAsync;
+            return this;
+        }
+
+        @Override
+        public Builder<T> cacheStale(int cacheStale) {
+            this.cacheStale = cacheStale;
             return this;
         }
 
@@ -139,6 +155,7 @@ public final class HttpRequester<T> {
          * @param requestCode
          * @return
          */
+        @Override
         public Builder<T> requestCode(int requestCode) {
             this.requestCode = requestCode;
             return this;

@@ -34,7 +34,7 @@ final class XCall<T> implements ICall<T> {
     private static IHttpExceptionHandler mHttpExceptionHandler = new DefaultHttpExceptionListener();
 
     // 缓存有效时间
-    private final static int CACHE_MAX_STALE = 7 * 24 * 3600;
+    public final static int CACHE_MAX_STALE = 7 * 24 * 3600;
     private IHttpRequestListener mHttpRequestListener;
     private IHttpResponseListener<T> mHttpResponseListener;
     private Call<T> mCall;

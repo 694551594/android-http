@@ -24,7 +24,7 @@ class DefaultHttpRequestListener
     @Override
     public void onStart(Context context, ICancelable cancelable, int requestCode) {
         this.mCancelable = cancelable;
-        mLoadingDialog = DialogBuilder.loadingDialog(context).setOnCancelListener(this).show();
+        mLoadingDialog = DialogBuilder.loadingDialog0(context).setOnCancelListener(this).show();
     }
 
     @Override
