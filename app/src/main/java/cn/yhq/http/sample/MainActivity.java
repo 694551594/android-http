@@ -15,7 +15,12 @@ import cn.yhq.http.core.AuthTokenHandler;
 import cn.yhq.http.core.HttpRequester;
 import cn.yhq.http.core.HttpResponseListener;
 import cn.yhq.http.core.ICall;
+import cn.yhq.http.core.ICallResponse;
 import cn.yhq.http.core.IHttpRequestListener;
+import cn.yhq.http.core.IHttpResponseListener;
+import retrofit2.Call;
+
+import static cn.yhq.http.core.HttpRequester.getAPI;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -26,6 +31,25 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ListView listView = (ListView) this.findViewById(R.id.listview);
 
+        final Context context = this;
+        final Call<WeatherInfo> call = getAPI(API.class).getWeatherInfo("北京");
+        final ICall<WeatherInfo> xCall = getAPI(XAPI.class).getWeatherInfo("北京");
+        final IHttpResponseListener<WeatherInfo> httpResponseListener = new HttpResponseListener<WeatherInfo>() {
+            @Override
+            public void onResponse(Context context, int requestCode,
+                                   WeatherInfo response, boolean isFromCache) {
+                super.onResponse(context, requestCode, response, isFromCache);
+                toast(new Gson().toJson(response));
+            }
+
+            @Override
+            public void onException(Context context, Throwable t) {
+                super.onException(context, t);
+                // 自定义异常处理
+            }
+
+        };
+
         final SimpleStringListAdapter adapter =
                 SimpleStringListAdapter.create(this, new String[]{
                         "普通异步请求",
@@ -34,7 +58,8 @@ public class MainActivity extends AppCompatActivity {
                         "XAPI使用HttpRequester异步请求",
                         "XAPI直接同步请求",
                         "XAPI使用HttpRequester同步请求",
-                        "使用自定义请求监听器"
+                        "使用自定义请求监听器",
+                        "最简单的请求方式"
                 });
 
         listView.setAdapter(adapter);
@@ -44,92 +69,49 @@ public class MainActivity extends AppCompatActivity {
                 switch (position) {
                     case 0:
                         // 普通的call异步请求
-                        HttpRequester<WeatherInfo> httpRequester =
-                                new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                                        .call(HttpRequester.getAPI(API.class).getWeatherInfo("北京")).exceptionProxy(false)
-                                        .listener(new HttpResponseListener<WeatherInfo>() {
-                                            @Override
-                                            public void onResponse(Context context, int requestCode, WeatherInfo response,
-                                                                   boolean isFromCache) {
-                                                super.onResponse(context, requestCode, response, isFromCache);
-                                                toast(new Gson().toJson(response));
-                                            }
-
-                                            @Override
-                                            public void onException(Context context, Throwable t) {
-                                                super.onException(context, t);
-                                                // 自定义异常处理
-                                            }
-                                        }).request();
-                        // httpRequester.cancel();
+                        ICallResponse<WeatherInfo> callResponse =
+                                new HttpRequester.Builder<WeatherInfo>(context)
+                                        .call(call)
+                                        .exceptionProxy(false)
+                                        .listener(httpResponseListener)
+                                        .request();
+                        // callResponse.cancel();
                         break;
                     case 1:
                         // 普通的call同步请求
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
-                                HttpRequester<WeatherInfo> httpRequester =
-                                        new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                                                .call(HttpRequester.getAPI(API.class).getWeatherInfo("北京")).setAsync(false)
-                                                .listener(new HttpResponseListener<WeatherInfo>() {
-                                                    @Override
-                                                    public void onResponse(Context context, int requestCode,
-                                                                           WeatherInfo response, boolean isFromCache) {
-                                                        super.onResponse(context, requestCode, response, isFromCache);
-                                                        toast(new Gson().toJson(response));
-                                                    }
-                                                }).request();
-                                WeatherInfo weatherInfo = httpRequester.getResponseBody();
+                                ICallResponse<WeatherInfo> callResponse =
+                                        new HttpRequester.Builder<WeatherInfo>(context)
+                                                .call(call)
+                                                .setAsync(false)
+                                                .listener(httpResponseListener)
+                                                .request();
+                                WeatherInfo weatherInfo = callResponse.getResponseBody();
                                 System.out.println(weatherInfo);
                             }
                         }).start();
                         break;
                     case 2:
                         // xcall异步请求1
-                        HttpRequester.getAPI(XAPI.class).getWeatherInfo("北京").execute(MainActivity.this, new HttpResponseListener<WeatherInfo>() {
-                            @Override
-                            public void onResponse(Context context, int requestCode, WeatherInfo response,
-                                                   boolean isFromCache) {
-                                super.onResponse(context, requestCode, response, isFromCache);
-                                toast(new Gson().toJson(response));
-                            }
-
-                        });
+                        xCall.execute(context, httpResponseListener);
                         break;
                     case 3:
                         // xcall异步请求2
-                        new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                                .call(HttpRequester.getAPI(XAPI.class).getWeatherInfo("北京"))
-                                .listener(new HttpResponseListener<WeatherInfo>() {
-                                    @Override
-                                    public void onResponse(Context context, int requestCode, WeatherInfo response,
-                                                           boolean isFromCache) {
-                                        super.onResponse(context, requestCode, response, isFromCache);
-                                        toast(new Gson().toJson(response));
-                                    }
-
-                                    @Override
-                                    public void onException(Context context, Throwable t) {
-                                        super.onException(context, t);
-                                        // 自定义异常处理
-                                    }
-                                }).request();
+                        new HttpRequester.Builder<WeatherInfo>(context)
+                                .call(xCall)
+                                .listener(httpResponseListener)
+                                .request();
                         break;
                     case 4:
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
                                 // xcall同步请求1
-                                ICall<WeatherInfo> call = HttpRequester.getAPI(XAPI.class).getWeatherInfo("北京").async(false).execute(MainActivity.this, new HttpResponseListener<WeatherInfo>() {
-                                    @Override
-                                    public void onResponse(Context context, int requestCode, WeatherInfo response,
-                                                           boolean isFromCache) {
-                                        super.onResponse(context, requestCode, response, isFromCache);
-                                        toast(new Gson().toJson(response));
-                                    }
-
-                                });
-                                WeatherInfo weatherInfo = call.getResponseBody();
+                                ICallResponse<WeatherInfo> callResponse = xCall.async(false)
+                                        .execute(context, httpResponseListener);
+                                WeatherInfo weatherInfo = callResponse.getResponseBody();
                                 System.out.println(weatherInfo);
                             }
                         }).start();
@@ -139,34 +121,24 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 // xcall同步请求2
-                                HttpRequester<WeatherInfo> httpRequester = new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                                        .call(HttpRequester.getAPI(XAPI.class).getWeatherInfo("北京"))
+                                ICallResponse<WeatherInfo> callResponse = new HttpRequester.Builder<WeatherInfo>(context)
+                                        .call(xCall)
                                         .sync()
-                                        .listener(new HttpResponseListener<WeatherInfo>() {
-                                            @Override
-                                            public void onResponse(Context context, int requestCode, WeatherInfo response,
-                                                                   boolean isFromCache) {
-                                                super.onResponse(context, requestCode, response, isFromCache);
-                                                toast(new Gson().toJson(response));
-                                            }
-                                        }).request();
-                                WeatherInfo weatherInfo = httpRequester.getResponseBody();
+                                        .listener(httpResponseListener)
+                                        .request();
+                                WeatherInfo weatherInfo = callResponse.getResponseBody();
                                 System.out.println(weatherInfo);
                             }
                         }).start();
                         break;
                     case 6:
-                        new HttpRequester.Builder<WeatherInfo>(MainActivity.this)
-                                .call(HttpRequester.getAPI(XAPI.class).getWeatherInfo("北京"))
+                        new HttpRequester.Builder<WeatherInfo>(context)
+                                .call(xCall)
                                 .listener((IHttpRequestListener) null)
-                                .listener(new HttpResponseListener<WeatherInfo>() {
-                                    @Override
-                                    public void onResponse(Context context, int requestCode, WeatherInfo response,
-                                                           boolean isFromCache) {
-                                        super.onResponse(context, requestCode, response, isFromCache);
-                                        toast(new Gson().toJson(response));
-                                    }
-                                }).request();
+                                .listener(httpResponseListener).request();
+                        break;
+                    case 7:
+                        HttpRequester.execute(context, xCall, httpResponseListener);
                         break;
                 }
 

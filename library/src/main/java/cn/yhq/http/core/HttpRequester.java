@@ -279,6 +279,10 @@ public final class HttpRequester<T> {
         return new XCall<>(call);
     }
 
+    public static <T> ICallResponse<T> execute(Context context, ICall<T> call, IHttpResponseListener<T> listener) {
+        return new HttpRequester.Builder<T>(context).call(call).listener(listener).request();
+    }
+
     public static <T> ICallResponse<T> execute(Context context, Call<T> call, IHttpResponseListener<T> listener) {
         return new HttpRequester.Builder<T>(context).call(call).listener(listener).request();
     }

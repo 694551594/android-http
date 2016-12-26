@@ -6,14 +6,5 @@ package cn.yhq.http.core;
 
 public interface ICall<T> extends ICallExecutor<T> {
 
-    ICall<T> requestCode(int requestCode);
-
-    ICall<T> cacheStrategy(CacheStrategy cacheStrategy);
-
-    ICall<T> async(boolean isAsync);
-
-    ICall<T> cacheStale(int cacheStale);
-
-    ICall<T> exceptionProxy(boolean exceptionProxy);
 
 }

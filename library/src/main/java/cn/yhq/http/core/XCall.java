@@ -169,11 +169,6 @@ final class XCall<T> implements ICall<T> {
     }
 
     @Override
-    public void cancel() {
-        mCall.cancel();
-    }
-
-    @Override
     public ICall<T> requestCode(int requestCode) {
         this.mRequestCode = requestCode;
         return this;
@@ -186,12 +181,12 @@ final class XCall<T> implements ICall<T> {
     }
 
     @Override
-    public ICall<T> execute(Context context, IHttpResponseListener<T> listener) {
+    public ICallResponse<T> execute(Context context, IHttpResponseListener<T> listener) {
         return execute(context, mDefaultHttpRequestListener, listener);
     }
 
     @Override
-    public ICall<T> execute(Context context, IHttpRequestListener requestListener, IHttpResponseListener<T> responseListener) {
+    public ICallResponse<T> execute(Context context, IHttpRequestListener requestListener, IHttpResponseListener<T> responseListener) {
         // 拦截器
         mHttpResponseProgressInterceptor.setProgressListener(mResponseProgressListener);
         mHttpRequestProgressInterceptor.setProgressListener(mRequestProgressListener);
@@ -224,22 +219,28 @@ final class XCall<T> implements ICall<T> {
         return this;
     }
 
-    @Override
-    public T getResponseBody() {
-        if (this.mResponse == null) {
-            return null;
-        }
-        return mResponse.body();
-    }
+    private ICallResponse<T> handleRequest() {
+        ICallResponse<T> callResponse = new ICallResponse<T>() {
+            @Override
+            public T getResponseBody() {
+                if (mResponse == null) {
+                    return null;
+                }
+                return mResponse.body();
+            }
 
-    @Override
-    public Response getResponse() {
-        return this.mResponse;
-    }
+            @Override
+            public Response getResponse() {
+                return mResponse;
+            }
 
-    private ICall<T> handleRequest() {
+            @Override
+            public void cancel() {
+                mCall.cancel();
+            }
+        };
         try {
-            mCallUIHandler.requestStart(this, mRequestCode);
+            mCallUIHandler.requestStart(callResponse, mRequestCode);
             // 真正开始请求的地方
             if (isAsync) {
                 // 异步执行
@@ -252,6 +253,6 @@ final class XCall<T> implements ICall<T> {
         } catch (Throwable t) {
             mCallUIHandler.requestException(t, mRequestCode);
         }
-        return this;
+        return callResponse;
     }
 }
