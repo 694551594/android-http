@@ -322,8 +322,8 @@ public final class HttpRequester<T> {
      * 取消本次请求
      */
     public void cancel() {
-        if (mCallResponse != null) {
-            mCallResponse.cancel();
+        if (mCall != null) {
+            mCall.cancel();
         }
     }
 

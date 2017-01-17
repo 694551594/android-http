@@ -219,6 +219,11 @@ final class XCall<T> implements ICall<T> {
         return this;
     }
 
+    @Override
+    public void cancel() {
+        mCall.cancel();
+    }
+
     private ICallResponse<T> handleRequest() {
         ICallResponse<T> callResponse = new ICallResponse<T>() {
             @Override
@@ -234,13 +239,9 @@ final class XCall<T> implements ICall<T> {
                 return mResponse;
             }
 
-            @Override
-            public void cancel() {
-                mCall.cancel();
-            }
         };
         try {
-            mCallUIHandler.requestStart(callResponse, mRequestCode);
+            mCallUIHandler.requestStart(this, mRequestCode);
             // 真正开始请求的地方
             if (isAsync) {
                 // 异步执行
