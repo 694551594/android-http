@@ -26,14 +26,14 @@ dependencies {
     compile 'com.android.support:appcompat-v7:25.0.1'
     compile 'com.squareup.retrofit2:retrofit:2.1.0'
     compile 'com.squareup.retrofit2:converter-gson:2.1.0'
-    compile 'cn.yhq:android-dialog:1.3'
+    compile 'cn.yhq:android-dialog:1.4'
 }
 
 publish {
     artifactId = 'android-http'
     userOrg = rootProject.userOrg
     groupId = rootProject.groupId
-    publishVersion = 2.4
+    publishVersion = 2.5
     desc = rootProject.description
     website = rootProject.website
 }
