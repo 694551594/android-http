@@ -3,7 +3,7 @@ apply plugin: 'com.novoda.bintray-release'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion '25.0.1'
+    buildToolsVersion '25.0.2'
 
     defaultConfig {
         minSdkVersion 14
@@ -23,17 +23,17 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:appcompat-v7:25.0.1'
+    compile 'com.android.support:appcompat-v7:25.2.0'
     compile 'com.squareup.retrofit2:retrofit:2.1.0'
     compile 'com.squareup.retrofit2:converter-gson:2.1.0'
-    compile 'cn.yhq:android-dialog:1.4'
+    compile 'cn.yhq:android-dialog:1.6.0'
 }
 
 publish {
     artifactId = 'android-http'
     userOrg = rootProject.userOrg
     groupId = rootProject.groupId
-    publishVersion = 2.5
+    publishVersion = "2.6.0"
     desc = rootProject.description
     website = rootProject.website
 }
