@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
+import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
 import okio.BufferedSink;
@@ -12,9 +13,10 @@ import okio.Okio;
 import okio.Sink;
 
 public interface ProgressListener {
-    void update(boolean multipart, long bytesRead, long contentLength, boolean done);
+    void update(Request request, boolean multipart, long bytesRead, long contentLength, boolean done);
 
     class ProgressRequestBody extends RequestBody {
+        private Request request;
         // 实际的待包装请求体
         private final RequestBody requestBody;
         // 进度回调接口
@@ -28,7 +30,8 @@ public interface ProgressListener {
          * @param requestBody      待包装的请求体
          * @param progressListener 回调接口
          */
-        public ProgressRequestBody(RequestBody requestBody, ProgressListener progressListener) {
+        public ProgressRequestBody(Request request, RequestBody requestBody, ProgressListener progressListener) {
+            this.request = request;
             this.requestBody = requestBody;
             this.progressListener = progressListener;
         }
@@ -95,7 +98,7 @@ public interface ProgressListener {
                     // 增加当前写入的字节数
                     bytesWritten += byteCount;
                     // 回调
-                    progressListener.update(
+                    progressListener.update(request,
                             requestBody.contentType().toString().contains(MultipartBody.FORM.toString()),
                             bytesWritten, contentLength, bytesWritten == contentLength);
                 }

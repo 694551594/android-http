@@ -72,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
                         ICallResponse<WeatherInfo> callResponse =
                                 new HttpRequester.Builder<WeatherInfo>(context)
                                         .call(call)
-                                        .exceptionProxy(false)
                                         .listener(httpResponseListener)
                                         .request();
                         // callResponse.cancel();

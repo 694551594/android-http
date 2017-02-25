@@ -29,8 +29,6 @@ public final class HttpRequester<T> {
     private ICallResponse<T> mCallResponse;
     private IHttpRequestListener mHttpRequestListener;
     private IHttpResponseListener<T> mHttpResponseListener;
-    // 标识是否使用请求监听器
-    private boolean mRequestListener = true;
 
     public static class Builder<T> implements ICallBuilder<Builder<T>> {
         private IHttpRequestListener httpRequestListener;
@@ -39,11 +37,8 @@ public final class HttpRequester<T> {
 
         private Context context;
         private int requestCode;
-        private CacheStrategy cacheStrategy = CacheStrategy.ONLY_NETWORK;
         private boolean async = true;
-        private boolean exceptionProxy = true;
-        private boolean requestListener = true;
-        private int cacheStale = XCall.CACHE_MAX_STALE;
+        private IHttpExceptionHandler httpExceptionHandler;
 
         private ICall<T> xCall;
 
@@ -74,17 +69,16 @@ public final class HttpRequester<T> {
 
         public Builder(final Context context) {
             this.context = context;
+            this.httpRequestListener = new DefaultHttpRequestListener();
         }
 
         public HttpRequester<T> build() {
             if (this.xCall == null) {
                 throw new NullPointerException("没有call对象？");
             }
-            xCall.cacheStrategy(cacheStrategy);
             xCall.requestCode(requestCode);
             xCall.async(async);
-            xCall.exceptionProxy(exceptionProxy);
-            xCall.cacheStale(cacheStale);
+            xCall.exceptionHandler(httpExceptionHandler);
             HttpRequester<T> httpRequester = new HttpRequester<>(this);
             return httpRequester;
         }
@@ -120,32 +114,14 @@ public final class HttpRequester<T> {
         }
 
         @Override
-        public Builder<T> exceptionProxy(boolean exceptionProxy) {
-            this.exceptionProxy = exceptionProxy;
-            return this;
-        }
-
-        /**
-         * 设置请求的缓存策略
-         *
-         * @param cacheStrategy
-         * @return
-         */
-        @Override
-        public Builder<T> cacheStrategy(CacheStrategy cacheStrategy) {
-            this.cacheStrategy = cacheStrategy;
-            return this;
-        }
-
-        @Override
         public Builder<T> async(boolean isAsync) {
             this.async = isAsync;
             return this;
         }
 
         @Override
-        public Builder<T> cacheStale(int cacheStale) {
-            this.cacheStale = cacheStale;
+        public Builder<T> exceptionHandler(IHttpExceptionHandler handler) {
+            httpExceptionHandler = handler;
             return this;
         }
 
@@ -185,9 +161,6 @@ public final class HttpRequester<T> {
          */
         public Builder<T> listener(IHttpRequestListener httpRequestListener) {
             this.httpRequestListener = httpRequestListener;
-            if (this.httpRequestListener == null) {
-                this.requestListener = false;
-            }
             return this;
         }
 
@@ -226,7 +199,6 @@ public final class HttpRequester<T> {
         this.mCall = builder.xCall;
         this.mHttpRequestListener = builder.getHttpRequestListener();
         this.mHttpResponseListener = builder.getHttpResponseListener();
-        this.mRequestListener = builder.requestListener;
     }
 
     public static <API> API registerAPI(String baseUrl, Class<API> apiClass) {
@@ -287,6 +259,10 @@ public final class HttpRequester<T> {
         XCall.setDefaultHttpExceptionHandler(httpExceptionHandler);
     }
 
+    public static void setCacheStrategy(CacheStrategy cacheStrategy, int cacheStale) {
+        XCall.setCacheStrategy(cacheStrategy, cacheStale);
+    }
+
     public static void setDefaultHttpRequestListener(
             IHttpRequestListener httpRequestListener) {
         XCall.setDefaultHttpRequestListener(httpRequestListener);
@@ -310,11 +286,7 @@ public final class HttpRequester<T> {
      * @return
      */
     public ICallResponse<T> request() {
-        if (!mRequestListener || mHttpRequestListener != null) {
-            mCallResponse = mCall.execute(mContext, mHttpRequestListener, mHttpResponseListener);
-        } else {
-            mCallResponse = mCall.execute(mContext, mHttpResponseListener);
-        }
+        mCallResponse = mCall.execute(mContext, mHttpRequestListener, mHttpResponseListener);
         return mCallResponse;
     }
 

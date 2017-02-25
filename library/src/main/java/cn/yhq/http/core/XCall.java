@@ -9,6 +9,7 @@ import cn.yhq.http.core.interceptor.HttpRequestProgressInterceptor;
 import cn.yhq.http.core.interceptor.HttpResponseProgressInterceptor;
 import cn.yhq.http.core.interceptor.ProgressListener;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -19,32 +20,36 @@ import retrofit2.Response;
 
 final class XCall<T> implements ICall<T> {
     // 拦截器
-    private final static HttpRequestCacheInterceptor mHttpRequestCacheInterceptor =
-            new HttpRequestCacheInterceptor();
-    private final static HttpResponseProgressInterceptor mHttpResponseProgressInterceptor =
-            new HttpResponseProgressInterceptor();
-    private final static HttpRequestProgressInterceptor mHttpRequestProgressInterceptor =
-            new HttpRequestProgressInterceptor();
-    private final static AuthenticatorInterceptor mAuthenticatorInterceptor =
-            new AuthenticatorInterceptor();
+    private final static HttpRequestCacheInterceptor mHttpRequestCacheInterceptor = new HttpRequestCacheInterceptor();
+    private final static HttpResponseProgressInterceptor mHttpResponseProgressInterceptor = new HttpResponseProgressInterceptor();
+    private final static HttpRequestProgressInterceptor mHttpRequestProgressInterceptor = new HttpRequestProgressInterceptor();
+    private final static AuthenticatorInterceptor mAuthenticatorInterceptor = new AuthenticatorInterceptor();
     private final static AuthTokenInterceptor mAuthTokenInterceptor = new AuthTokenInterceptor();
 
-    private static IHttpRequestListener mDefaultHttpRequestListener =
-            new DefaultHttpRequestListener();
-    private static IHttpExceptionHandler mHttpExceptionHandler = new DefaultHttpExceptionListener();
+    private static IHttpRequestListener mDefaultHttpRequestListener;
+    private static IHttpExceptionHandler mDefaultHttpExceptionHandler;
 
     // 缓存有效时间
     public final static int CACHE_MAX_STALE = 7 * 24 * 3600;
+    private final static CacheStrategy CACHE_STRATEGY = CacheStrategy.ONLY_NETWORK;
+
     private IHttpRequestListener mHttpRequestListener;
     private IHttpResponseListener<T> mHttpResponseListener;
+    private IHttpExceptionHandler mHttpExceptionHandler;
     private Call<T> mCall;
     private Response<T> mResponse;
     private CallUIHandler mCallUIHandler;
     private int mRequestCode;
-    private CacheStrategy mCacheStrategy = CacheStrategy.ONLY_NETWORK;
-    private int mCacheStale = CACHE_MAX_STALE;
     private boolean isAsync = true;
-    private boolean isExceptionProxy = true;
+
+    private HttpRequestListenerProxy mHttpRequestListenerProxy = new HttpRequestListenerProxy();
+    private HttpResponseListenerProxy mHttpResponseListenerProxy = new HttpResponseListenerProxy();
+
+    static {
+        setCacheStrategy(CACHE_STRATEGY, CACHE_MAX_STALE);
+        setDefaultHttpExceptionHandler(new DefaultHttpExceptionListener());
+        setDefaultHttpRequestListener(new DefaultHttpRequestListener());
+    }
 
     // 回调处理
     private Callback<T> mUICallback = new Callback<T>() {
@@ -73,7 +78,7 @@ final class XCall<T> implements ICall<T> {
         @Override
         public void onException(Context context, Throwable t) {
             super.onException(context, t);
-            if (isExceptionProxy && mHttpExceptionHandler != null) {
+            if (mHttpExceptionHandler != null) {
                 mHttpExceptionHandler.onException(context, t);
             }
             if (mHttpResponseListener != null) {
@@ -96,7 +101,7 @@ final class XCall<T> implements ICall<T> {
 
         @Override
         public void onException(Context context, int requestCode, Throwable t) {
-            if (isExceptionProxy && mHttpExceptionHandler != null) {
+            if (mHttpExceptionHandler != null) {
                 mHttpExceptionHandler.onException(context, t);
             }
             if (mHttpRequestListener != null) {
@@ -129,7 +134,7 @@ final class XCall<T> implements ICall<T> {
     private ProgressListener mResponseProgressListener = new ProgressListener() {
 
         @Override
-        public void update(boolean multipart, long bytesRead, long contentLength, boolean done) {
+        public void update(Request request, boolean multipart, long bytesRead, long contentLength, boolean done) {
             mCallUIHandler.responseProgress(multipart, bytesRead, contentLength, done);
         }
     };
@@ -137,7 +142,7 @@ final class XCall<T> implements ICall<T> {
     private ProgressListener mRequestProgressListener = new ProgressListener() {
 
         @Override
-        public void update(boolean multipart, long bytesRead, long contentLength, boolean done) {
+        public void update(Request request, boolean multipart, long bytesRead, long contentLength, boolean done) {
             mCallUIHandler.requestProgress(multipart, bytesRead, contentLength, done);
         }
     };
@@ -147,25 +152,30 @@ final class XCall<T> implements ICall<T> {
         mAuthTokenInterceptor.setAuthTokenHandler(handler);
     }
 
-    public static void setDefaultHttpExceptionHandler(
-            IHttpExceptionHandler httpExceptionHandler) {
-        mHttpExceptionHandler = httpExceptionHandler;
+    public static void setCacheStrategy(CacheStrategy cacheStrategy, int cacheStale) {
+        mHttpRequestCacheInterceptor.setCacheStrategy(cacheStrategy, cacheStale);
     }
 
-    public static void setDefaultHttpRequestListener(
-            IHttpRequestListener httpRequestListener) {
+    public static void setDefaultHttpExceptionHandler(IHttpExceptionHandler httpExceptionHandler) {
+        mDefaultHttpExceptionHandler = httpExceptionHandler;
+    }
+
+    public static void setDefaultHttpRequestListener(IHttpRequestListener httpRequestListener) {
         mDefaultHttpRequestListener = httpRequestListener;
     }
 
     public static void init(OkHttpClient.Builder builder) {
         builder.addInterceptor(mHttpRequestCacheInterceptor)
                 .addInterceptor(mHttpRequestProgressInterceptor)
-                .addInterceptor(mHttpResponseProgressInterceptor).authenticator(mAuthenticatorInterceptor)
+                .addInterceptor(mHttpResponseProgressInterceptor)
+                .authenticator(mAuthenticatorInterceptor)
                 .addNetworkInterceptor(mAuthTokenInterceptor);
     }
 
     public XCall(Call<T> call) {
         this.mCall = call;
+        this.mHttpExceptionHandler = mDefaultHttpExceptionHandler;
+        this.mHttpRequestListener = mDefaultHttpRequestListener;
     }
 
     @Override
@@ -175,14 +185,8 @@ final class XCall<T> implements ICall<T> {
     }
 
     @Override
-    public ICall<T> cacheStrategy(CacheStrategy cacheStrategy) {
-        this.mCacheStrategy = cacheStrategy;
-        return this;
-    }
-
-    @Override
     public ICallResponse<T> execute(Context context, IHttpResponseListener<T> listener) {
-        return execute(context, mDefaultHttpRequestListener, listener);
+        return execute(context, mHttpRequestListener, listener);
     }
 
     @Override
@@ -190,13 +194,12 @@ final class XCall<T> implements ICall<T> {
         // 拦截器
         mHttpResponseProgressInterceptor.setProgressListener(mResponseProgressListener);
         mHttpRequestProgressInterceptor.setProgressListener(mRequestProgressListener);
-        mHttpRequestCacheInterceptor.setCacheStrategy(mCacheStrategy, mCacheStale);
         // 监听器
         this.mCallUIHandler = new CallUIHandler(context);
         this.mHttpRequestListener = requestListener;
         this.mHttpResponseListener = responseListener;
-        this.mCallUIHandler.setHttpRequestListener(new HttpRequestListenerProxy());
-        this.mCallUIHandler.setHttpResponseListener(new HttpResponseListenerProxy());
+        this.mCallUIHandler.setHttpRequestListener(mHttpRequestListenerProxy);
+        this.mCallUIHandler.setHttpResponseListener(mHttpResponseListenerProxy);
 
         return handleRequest();
     }
@@ -208,14 +211,8 @@ final class XCall<T> implements ICall<T> {
     }
 
     @Override
-    public ICall<T> cacheStale(int cacheStale) {
-        this.mCacheStale = cacheStale;
-        return this;
-    }
-
-    @Override
-    public ICall<T> exceptionProxy(boolean exceptionProxy) {
-        this.isExceptionProxy = exceptionProxy;
+    public ICallExecutor<T> exceptionHandler(IHttpExceptionHandler handler) {
+        this.mHttpExceptionHandler = handler;
         return this;
     }
 
@@ -256,4 +253,5 @@ final class XCall<T> implements ICall<T> {
         }
         return callResponse;
     }
+
 }

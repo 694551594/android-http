@@ -15,10 +15,10 @@ import okhttp3.Route;
  */
 
 public class AuthenticatorInterceptor implements Authenticator {
-    private AuthTokenHandler mAuthTokenHandler;
+    private static AuthTokenHandler mAuthTokenHandler;
 
-    public void setAuthTokenHandler(AuthTokenHandler authTokenHandler) {
-        this.mAuthTokenHandler = authTokenHandler;
+    public static void setAuthTokenHandler(AuthTokenHandler authTokenHandler) {
+        AuthenticatorInterceptor.mAuthTokenHandler = authTokenHandler;
     }
 
     @Override

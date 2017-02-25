@@ -12,10 +12,10 @@ import okhttp3.Response;
  */
 
 public class AuthTokenInterceptor implements Interceptor {
-    private AuthTokenHandler mAuthTokenHandler;
+    private static AuthTokenHandler mAuthTokenHandler;
 
-    public void setAuthTokenHandler(AuthTokenHandler authTokenHandler) {
-        this.mAuthTokenHandler = authTokenHandler;
+    public static void setAuthTokenHandler(AuthTokenHandler authTokenHandler) {
+        AuthTokenInterceptor.mAuthTokenHandler = authTokenHandler;
     }
 
     @Override

@@ -8,12 +8,8 @@ public interface ICallBuilder<T> {
 
     T requestCode(int requestCode);
 
-    T cacheStrategy(CacheStrategy cacheStrategy);
-
     T async(boolean isAsync);
 
-    T cacheStale(int cacheStale);
-
-    T exceptionProxy(boolean exceptionProxy);
+    T exceptionHandler(IHttpExceptionHandler handler);
 
 }

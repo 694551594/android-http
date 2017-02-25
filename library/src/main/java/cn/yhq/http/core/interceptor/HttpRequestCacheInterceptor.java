@@ -13,12 +13,12 @@ import okhttp3.Response;
  * Created by Yanghuiqiang on 2016/10/14.
  */
 public class HttpRequestCacheInterceptor implements Interceptor {
-    private CacheStrategy cacheStrategy;
-    private int cacheMaxStale;
+    private static CacheStrategy cacheStrategy;
+    private static int cacheMaxStale;
 
-    public void setCacheStrategy(CacheStrategy cacheStrategy, int cacheMaxStale) {
-        this.cacheStrategy = cacheStrategy;
-        this.cacheMaxStale = cacheMaxStale;
+    public static void setCacheStrategy(CacheStrategy cacheStrategy, int cacheMaxStale) {
+        HttpRequestCacheInterceptor.cacheStrategy = cacheStrategy;
+        HttpRequestCacheInterceptor.cacheMaxStale = cacheMaxStale;
     }
 
     @Override

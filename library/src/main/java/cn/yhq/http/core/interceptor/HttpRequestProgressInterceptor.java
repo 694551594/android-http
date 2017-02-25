@@ -13,7 +13,6 @@ import okhttp3.Response;
  */
 
 public class HttpRequestProgressInterceptor implements Interceptor {
-
     private ProgressListener progressListener;
 
     public void setProgressListener(ProgressListener progressListener) {
@@ -25,7 +24,7 @@ public class HttpRequestProgressInterceptor implements Interceptor {
         Request request = chain.request();
         if (request.body() != null) {
             request = request.newBuilder()
-                    .post(new ProgressListener.ProgressRequestBody(request.body(), progressListener)).build();
+                    .post(new ProgressListener.ProgressRequestBody(request, request.body(), progressListener)).build();
         }
         return chain.proceed(request);
     }
