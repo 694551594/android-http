@@ -27,9 +27,9 @@ public class FileUploader<UploadResponse, FileUploadInfo> {
         }
 
         @Override
-        public void onFailure(Throwable t) {
+        public void onFailure(Context context, Throwable t) {
             for (OnUploadResponseListener<FileUploadInfo> listener : responseListeners) {
-                listener.onFailure(t);
+                listener.onFailure(context, t);
             }
         }
     };
@@ -58,27 +58,27 @@ public class FileUploader<UploadResponse, FileUploadInfo> {
         mUploadManager.checkMd5(files, md5s, new OnUploadResponseListener<FileUploadInfo>() {
             @Override
             public void onSuccess(FileUploadInfo response) {
-                List<File> files = new ArrayList<>();
+                List<File> _files = new ArrayList<>();
 
                 for (File file : files) {
                     if (md5Strategy.isUploaded(file, md5s.get(file), response)) {
                         continue;
                     } else {
-                        files.add(file);
+                        _files.add(file);
                     }
                 }
 
                 // 秒传，直接返回
-                if (files.isEmpty()) {
+                if (_files.isEmpty()) {
                     mUploadResponseListenerDispatcher.onSuccess(response);
                 } else {
-                    onUpload(files);
+                    onUpload(_files);
                 }
             }
 
             @Override
-            public void onFailure(Throwable t) {
-                mUploadResponseListenerDispatcher.onFailure(t);
+            public void onFailure(Context context, Throwable t) {
+                mUploadResponseListenerDispatcher.onFailure(context, t);
             }
         });
     }
@@ -92,8 +92,8 @@ public class FileUploader<UploadResponse, FileUploadInfo> {
             }
 
             @Override
-            public void onFailure(Throwable t) {
-                mUploadResponseListenerDispatcher.onFailure(t);
+            public void onFailure(Context context, Throwable t) {
+                mUploadResponseListenerDispatcher.onFailure(context, t);
             }
         });
     }

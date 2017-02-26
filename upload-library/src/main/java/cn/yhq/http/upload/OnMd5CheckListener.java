@@ -6,5 +6,5 @@ package cn.yhq.http.upload;
 
 public interface OnMd5CheckListener {
     void start();
-    void complate();
+    void complete();
 }

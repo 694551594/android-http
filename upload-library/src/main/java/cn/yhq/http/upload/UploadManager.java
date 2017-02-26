@@ -1,5 +1,7 @@
 package cn.yhq.http.upload;
 
+import android.content.Context;
+
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +40,8 @@ public class UploadManager<Response, Result> {
             }
 
             @Override
-            public void onFailure(Throwable t) {
-                listener.onFailure(t);
+            public void onFailure(Context context, Throwable t) {
+                listener.onFailure(context, t);
             }
         });
     }
@@ -53,8 +55,8 @@ public class UploadManager<Response, Result> {
             }
 
             @Override
-            public void onFailure(Throwable t) {
-                listener2.onFailure(t);
+            public void onFailure(Context context, Throwable t) {
+                listener2.onFailure(context, t);
             }
         });
     }

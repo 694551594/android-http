@@ -45,7 +45,7 @@ public class Md5CheckTask extends AsyncTask<File, Integer, Map<File, String>> {
     @Override
     protected void onPostExecute(Map<File, String> fileStringMap) {
         super.onPostExecute(fileStringMap);
-        md5CheckListener.complate();
+        md5CheckListener.complete();
     }
 
 }

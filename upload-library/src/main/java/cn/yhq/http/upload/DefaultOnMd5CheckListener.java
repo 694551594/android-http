@@ -22,7 +22,7 @@ public class DefaultOnMd5CheckListener implements OnMd5CheckListener {
     }
 
     @Override
-    public void complate() {
+    public void complete() {
         dialog.dismiss();
     }
 

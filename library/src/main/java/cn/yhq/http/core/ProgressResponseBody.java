@@ -2,7 +2,6 @@ package cn.yhq.http.core;
 
 import java.io.IOException;
 
-import cn.yhq.http.core.interceptor.ProgressListener;
 import okhttp3.MediaType;
 import okhttp3.ResponseBody;
 import okio.Buffer;

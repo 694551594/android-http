@@ -120,14 +120,8 @@ final class CallUIHandler<T> extends Handler {
         boolean done = progressInfo.done;
         switch (msg.what) {
             case MSG_REQUEST_PROGRESS:
-                if (mHttpRequestListener != null) {
-                    mHttpRequestListener.onRequestProgress(multipart, bytesRead, contentLength, done);
-                }
                 break;
             case MSG_RESPONSE_PROGRESS:
-                if (mHttpRequestListener != null) {
-                    mHttpRequestListener.onResponseProgress(multipart, bytesRead, contentLength, done);
-                }
                 break;
         }
     }

@@ -43,7 +43,7 @@ public class DefaultMd5CheckRequest<UploadResponse> implements Md5CheckRequest<U
             @Override
             public void onException(Context context, Throwable t) {
                 super.onException(context, t);
-                listener.onFailure(t);
+                listener.onFailure(context, t);
             }
         });
     }

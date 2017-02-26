@@ -11,7 +11,7 @@ import cn.yhq.http.core.ICall;
 import cn.yhq.http.core.ICancelable;
 import cn.yhq.http.core.ProgressRequestBody;
 import cn.yhq.http.core.RequestBodyUtils;
-import cn.yhq.http.core.interceptor.ProgressListener;
+import cn.yhq.http.core.ProgressListener;
 import okhttp3.RequestBody;
 
 /**
@@ -70,7 +70,7 @@ public class DefaultUploadRequest<UploadResponse> implements UploadRequest<Uploa
             @Override
             public void onException(Context context, Throwable t) {
                 super.onException(context, t);
-                listener2.onFailure(t);
+                listener2.onFailure(context, t);
             }
         });
 
