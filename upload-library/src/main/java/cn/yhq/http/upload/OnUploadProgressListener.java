@@ -6,4 +6,8 @@ package cn.yhq.http.upload;
 
 public interface OnUploadProgressListener {
     void onProgress(int progress);
+
+    void onStart();
+
+    void onComplete();
 }

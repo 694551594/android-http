@@ -2,11 +2,8 @@ package cn.yhq.http.core;
 
 import android.webkit.MimeTypeMap;
 
-import com.google.gson.Gson;
-
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -24,35 +21,8 @@ public class RequestBodyUtils {
         return createFileRequestBody(files);
     }
 
-    public static RequestBody createFileRequestBody(File file, String callbackUrl,
-                                                    Map<String, Object> callbackBody) {
-        List<File> files = new ArrayList<File>();
-        files.add(file);
-        return createFileRequestBody(files, callbackUrl, callbackBody);
-    }
-
-    public static RequestBody createFileRequestBody(File file, String callbackUrl,
-                                                    String callbackBody) {
-        List<File> files = new ArrayList<File>();
-        files.add(file);
-        return createFileRequestBody(files, callbackUrl, callbackBody);
-    }
-
     public static RequestBody createFileRequestBody(List<File> files) {
         return createFileRequestBody(files, null);
-    }
-
-    public static RequestBody createFileRequestBody(List<File> files, String callbackUrl,
-                                                    Map<String, Object> callbackBody) {
-        return createFileRequestBody(files, callbackUrl, new Gson().toJson(callbackBody));
-    }
-
-    public static RequestBody createFileRequestBody(List<File> files, String callbackUrl,
-                                                    String callbackBody) {
-        Map<String, String> exts = new HashMap<String, String>();
-        exts.put("callbackUrl", callbackUrl);
-        exts.put("callbackBody", callbackBody);
-        return createFileRequestBody(files, exts);
     }
 
     private static RequestBody createFileRequestBody(List<File> files, Map<String, String> exts) {

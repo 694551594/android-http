@@ -19,14 +19,4 @@ public class HttpRequestListener implements IHttpRequestListener {
 
     }
 
-    @Override
-    public void onRequestProgress(boolean multipart, long bytesRead, long contentLength, boolean done) {
-
-    }
-
-    @Override
-    public void onResponseProgress(boolean multipart, long bytesRead, long contentLength, boolean done) {
-
-    }
-
 }

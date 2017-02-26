@@ -20,6 +20,16 @@ public class DefaultOnUploadProgressListener implements OnUploadProgressListener
     }
 
     @Override
+    public void onStart() {
+
+    }
+
+    @Override
+    public void onComplete() {
+
+    }
+
+    @Override
     public void onProgress(int progress) {
         progressHandler.setProgress(progress);
         if (progress == 0) {
