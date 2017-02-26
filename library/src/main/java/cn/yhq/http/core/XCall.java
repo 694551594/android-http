@@ -5,11 +5,7 @@ import android.content.Context;
 import cn.yhq.http.core.interceptor.AuthTokenInterceptor;
 import cn.yhq.http.core.interceptor.AuthenticatorInterceptor;
 import cn.yhq.http.core.interceptor.HttpRequestCacheInterceptor;
-import cn.yhq.http.core.interceptor.HttpRequestProgressInterceptor;
-import cn.yhq.http.core.interceptor.HttpResponseProgressInterceptor;
-import cn.yhq.http.core.interceptor.ProgressListener;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -21,8 +17,6 @@ import retrofit2.Response;
 final class XCall<T> implements ICall<T> {
     // 拦截器
     private final static HttpRequestCacheInterceptor mHttpRequestCacheInterceptor = new HttpRequestCacheInterceptor();
-    private final static HttpResponseProgressInterceptor mHttpResponseProgressInterceptor = new HttpResponseProgressInterceptor();
-    private final static HttpRequestProgressInterceptor mHttpRequestProgressInterceptor = new HttpRequestProgressInterceptor();
     private final static AuthenticatorInterceptor mAuthenticatorInterceptor = new AuthenticatorInterceptor();
     private final static AuthTokenInterceptor mAuthTokenInterceptor = new AuthTokenInterceptor();
 
@@ -116,36 +110,7 @@ final class XCall<T> implements ICall<T> {
             }
         }
 
-        @Override
-        public void onRequestProgress(boolean multipart, long bytesRead, long contentLength, boolean done) {
-            if (mHttpRequestListener != null) {
-                mHttpRequestListener.onRequestProgress(multipart, bytesRead, contentLength, done);
-            }
-        }
-
-        @Override
-        public void onResponseProgress(boolean multipart, long bytesRead, long contentLength, boolean done) {
-            if (mHttpRequestListener != null) {
-                mHttpRequestListener.onResponseProgress(multipart, bytesRead, contentLength, done);
-            }
-        }
     }
-
-    private ProgressListener mResponseProgressListener = new ProgressListener() {
-
-        @Override
-        public void update(Request request, boolean multipart, long bytesRead, long contentLength, boolean done) {
-            mCallUIHandler.responseProgress(multipart, bytesRead, contentLength, done);
-        }
-    };
-
-    private ProgressListener mRequestProgressListener = new ProgressListener() {
-
-        @Override
-        public void update(Request request, boolean multipart, long bytesRead, long contentLength, boolean done) {
-            mCallUIHandler.requestProgress(multipart, bytesRead, contentLength, done);
-        }
-    };
 
     public static void setAuthTokenHandler(AuthTokenHandler handler) {
         mAuthenticatorInterceptor.setAuthTokenHandler(handler);
@@ -166,8 +131,6 @@ final class XCall<T> implements ICall<T> {
 
     public static void init(OkHttpClient.Builder builder) {
         builder.addInterceptor(mHttpRequestCacheInterceptor)
-                .addInterceptor(mHttpRequestProgressInterceptor)
-                .addInterceptor(mHttpResponseProgressInterceptor)
                 .authenticator(mAuthenticatorInterceptor)
                 .addNetworkInterceptor(mAuthTokenInterceptor);
     }
@@ -191,9 +154,6 @@ final class XCall<T> implements ICall<T> {
 
     @Override
     public ICallResponse<T> execute(Context context, IHttpRequestListener requestListener, IHttpResponseListener<T> responseListener) {
-        // 拦截器
-        mHttpResponseProgressInterceptor.setProgressListener(mResponseProgressListener);
-        mHttpRequestProgressInterceptor.setProgressListener(mRequestProgressListener);
         // 监听器
         this.mCallUIHandler = new CallUIHandler(context);
         this.mHttpRequestListener = requestListener;

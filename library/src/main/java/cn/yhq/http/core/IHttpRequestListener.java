@@ -10,7 +10,4 @@ public interface IHttpRequestListener {
 
     void onComplete(int requestCode);
 
-    void onRequestProgress(boolean multipart, long bytesRead, long contentLength, boolean done);
-
-    void onResponseProgress(boolean multipart, long bytesRead, long contentLength, boolean done);
 }

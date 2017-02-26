@@ -1,10 +1,9 @@
-package cn.yhq.http.core.interceptor;
+package cn.yhq.http.core;
 
 import java.io.IOException;
 
+import cn.yhq.http.core.interceptor.ProgressListener;
 import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.Request;
 import okhttp3.ResponseBody;
 import okio.Buffer;
 import okio.BufferedSource;
@@ -15,12 +14,10 @@ import okio.Source;
 
 class ProgressResponseBody extends ResponseBody {
     private final ResponseBody responseBody;
-    private Request request;
     private final ProgressListener progressListener;
     private BufferedSource bufferedSource;
 
-    public ProgressResponseBody(Request request, ResponseBody responseBody, ProgressListener progressListener) {
-        this.request = request;
+    public ProgressResponseBody(ResponseBody responseBody, ProgressListener progressListener) {
         this.responseBody = responseBody;
         this.progressListener = progressListener;
     }
@@ -52,15 +49,7 @@ class ProgressResponseBody extends ResponseBody {
                 long bytesRead = super.read(sink, byteCount);
                 // read() returns the number of bytes read, or -1 if this source is exhausted.
                 totalBytesRead += bytesRead != -1 ? bytesRead : 0;
-                if (responseBody.contentType() != null) {
-                    progressListener.update(request,
-                            responseBody.contentType().toString().contains(MultipartBody.FORM.toString()),
-                            totalBytesRead, responseBody.contentLength(), bytesRead == -1);
-                } else {
-                    progressListener.update(request, false, totalBytesRead, responseBody.contentLength(),
-                            bytesRead == -1);
-                }
-
+                progressListener.onProgress(totalBytesRead, responseBody.contentLength());
                 return bytesRead;
             }
         };

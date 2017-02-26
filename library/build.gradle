@@ -33,7 +33,7 @@ publish {
     artifactId = 'android-http'
     userOrg = rootProject.userOrg
     groupId = rootProject.groupId
-    publishVersion = "2.6.0"
+    publishVersion = "3.0.0"
     desc = rootProject.description
     website = rootProject.website
 }
