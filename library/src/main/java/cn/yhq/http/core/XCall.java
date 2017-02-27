@@ -49,7 +49,8 @@ final class XCall<T> implements ICall<T> {
     private Retrofit mRetrofit;
     private Type mResponseType;
     private static CachingSystem mCachingSystem;
-    private boolean mCacheEnable;
+    private boolean mCacheSupport;
+    private static boolean mCacheEnable;
 
     private HttpRequestListenerProxy mHttpRequestListenerProxy = new HttpRequestListenerProxy();
     private HttpResponseListenerProxy mHttpResponseListenerProxy = new HttpResponseListenerProxy();
@@ -67,7 +68,7 @@ final class XCall<T> implements ICall<T> {
         public void onResponse(Call<T> call, retrofit2.Response<T> response) {
             mResponse = response;
             mResponseBody = mResponse.body();
-            if (mCacheEnable) {
+            if (mCacheEnable && mCacheSupport) {
                 byte[] bytes = SmartUtils.requestToBytes(mRetrofit, mResponseBody, mResponseType, null, null);
                 mCachingSystem.addInCache(response, bytes);
             }
@@ -153,6 +154,7 @@ final class XCall<T> implements ICall<T> {
 
     public static void setCachingSystem(CachingSystem cachingSystem) {
         mCachingSystem = cachingSystem;
+        mCacheEnable = true;
     }
 
     public static void setDefaultHttpExceptionHandler(IHttpExceptionHandler httpExceptionHandler) {
@@ -172,7 +174,7 @@ final class XCall<T> implements ICall<T> {
     @Deprecated
     XCall(Call<T> call) {
         this(null, call, null);
-        this.mCacheEnable = false;
+        this.mCacheSupport = false;
     }
 
     XCall(Retrofit retrofit, Call<T> call, Type responseType) {
@@ -183,7 +185,7 @@ final class XCall<T> implements ICall<T> {
         this.mHttpRequestListener = mDefaultHttpRequestListener;
         // 默认使用全局的缓存策略
         this.mCacheStrategy = CACHE_STRATEGY;
-        this.mCacheEnable = true;
+        this.mCacheSupport = true;
     }
 
     @Override
@@ -223,7 +225,7 @@ final class XCall<T> implements ICall<T> {
 
     @Override
     public ICall<T> cacheStrategy(CacheStrategy cacheStrategy) {
-        if (mCacheEnable) {
+        if (mCacheEnable && mCacheSupport) {
             this.mCacheStrategy = cacheStrategy;
         } else {
             // 不支持缓存处理
