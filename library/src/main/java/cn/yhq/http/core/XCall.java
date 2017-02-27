@@ -270,6 +270,7 @@ final class XCall<T> implements ICall<T> {
             case ONLY_CACHE:
                 handleCache();
                 break;
+            case BOTH:
             case FIRST_CACHE_THEN_REQUEST:
                 handleCache();
                 handleNetwork();

@@ -1,7 +1,8 @@
 package cn.yhq.http.core;
 
 public enum CacheStrategy {
-
+    @Deprecated
+    BOTH,
     // 仅仅请求缓存
     ONLY_CACHE,
     // 都有
