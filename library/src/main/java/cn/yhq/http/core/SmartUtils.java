@@ -18,7 +18,7 @@ public final class SmartUtils {
      * does the job?
      */
     @SuppressWarnings("unchecked")
-    public static <T> byte[] responseToBytes(Retrofit retrofit, T data, Type dataType,
+    public static <T> byte[] requestToBytes(Retrofit retrofit, T data, Type dataType,
                                              Annotation[] parameterAnnotations, Annotation[] methodAnnotations) {
         for (Converter.Factory factory : retrofit.converterFactories()) {
             if (factory == null) continue;

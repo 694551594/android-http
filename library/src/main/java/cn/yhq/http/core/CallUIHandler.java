@@ -92,9 +92,6 @@ final class CallUIHandler<T> extends Handler {
                 if (mHttpResponseListener != null) {
                     mHttpResponseListener.onResponse(context, requestCode, responseInfo.responseData, true);
                 }
-                if (mHttpRequestListener != null) {
-                    mHttpRequestListener.onComplete(requestCode);
-                }
                 break;
         }
     }
@@ -149,6 +146,7 @@ final class CallUIHandler<T> extends Handler {
             case MSG_RESPONSE_PROGRESS:
                 handleProgressMessage(msg);
                 break;
+            case MSG_RESPONSE_CACHE:
             case MSG_RESPONSE_SUCCESS:
             case MSG_RESPONSE_FAILURE:
                 handleResponseMessage(msg);

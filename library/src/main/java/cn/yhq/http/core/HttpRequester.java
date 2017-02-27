@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -38,7 +37,7 @@ public final class HttpRequester<T> {
 
         private Context context;
         private int requestCode;
-        private CacheStrategy cacheStrategy;
+        private CacheStrategy cacheStrategy = CacheStrategy.ONLY_NETWORK;
         private boolean async = true;
         private IHttpExceptionHandler httpExceptionHandler;
 
@@ -238,9 +237,10 @@ public final class HttpRequester<T> {
     private static void initDefaultOkHttpClient(Context context) {
         int cacheSize = 10 * 1024 * 1024; // 10 MiB
         File cacheDirectory = new File(Util.getDiskFileDir(context), "okhttp");
-        Cache cache = new Cache(cacheDirectory, cacheSize);
+        // Cache cache = new Cache(cacheDirectory, cacheSize);
         OkHttpClient.Builder builder = new OkHttpClient.Builder().connectTimeout(1, TimeUnit.MINUTES)
-                .readTimeout(1, TimeUnit.MINUTES).writeTimeout(1, TimeUnit.MINUTES).cache(cache);
+                .readTimeout(1, TimeUnit.MINUTES).writeTimeout(1, TimeUnit.MINUTES);
+                //.cache(cache);
         setOkHttpClient(builder);
     }
 

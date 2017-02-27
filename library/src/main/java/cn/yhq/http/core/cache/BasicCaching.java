@@ -30,6 +30,9 @@ public class BasicCaching implements CachingSystem {
 
     public BasicCaching(File diskDirectory, long maxDiskSize, int memoryEntries) {
         try {
+            if (!diskDirectory.exists()) {
+                diskDirectory.mkdirs();
+            }
             diskCache = DiskLruCache.open(diskDirectory, 1, 1, maxDiskSize);
         } catch (IOException exc) {
             Log.e("SmartCall", "", exc);
@@ -56,13 +59,12 @@ public class BasicCaching implements CachingSystem {
     }
 
     @Override
-    public <T> void addInCache(Response<T> response) {
+    public <T> void addInCache(Response<T> response, byte[] bytes) {
         String cacheKey = urlToKey(response.raw().request().url().url());
         try {
-            byte[] rawResponse = response.raw().body().bytes();
-            memoryCache.put(cacheKey, rawResponse);
+            memoryCache.put(cacheKey, bytes);
             DiskLruCache.Editor editor = diskCache.edit(urlToKey(response.raw().request().url().url()));
-            editor.set(0, new String(rawResponse, Charset.defaultCharset()));
+            editor.set(0, new String(bytes, Charset.defaultCharset()));
             editor.commit();
         } catch (IOException exc) {
             Log.e("SmartCall", "", exc);

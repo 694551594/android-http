@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 
 import cn.yhq.adapter.list.SimpleStringListAdapter;
 import cn.yhq.http.core.AuthTokenHandler;
+import cn.yhq.http.core.CacheStrategy;
 import cn.yhq.http.core.HttpRequester;
 import cn.yhq.http.core.HttpResponseListener;
 import cn.yhq.http.core.ICall;
@@ -28,24 +29,58 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 通常在Application中初始化
+        HttpRequester.init(this);
+        // 注册api接口
+        HttpRequester.registerAPI("http://wthrcdn.etouch.cn", API.class);
+        HttpRequester.registerXAPI("http://wthrcdn.etouch.cn", XAPI.class);
+        // token验证处理器
+        HttpRequester.setAuthTokenHandler(new AuthTokenHandler() {
+            @Override
+            public String getAuthName() {
+                // 获取权限验证的key
+                return "Authorization";
+            }
+
+            @Override
+            public String getAuthValue(boolean isRefresh) {
+                // 获取权限验证的值，如果isRefresh为true的话，说明需要重新进行验证了
+                if (isRefresh) {
+                    // 进入登录界面
+                    startLoginActivity();
+                    return null;
+                } else {
+                    // 返回token
+                    return "Bearer " + getAccessToken();
+                }
+            }
+
+            @Override
+            public boolean isIgnoreUrl(String url) {
+                // 忽略掉，不需要权限验证的url
+                return false;
+            }
+        });
+
         setContentView(R.layout.activity_main);
         ListView listView = (ListView) this.findViewById(R.id.listview);
 
         final Context context = this;
-        final Call<WeatherInfo> call = getAPI(API.class).getWeatherInfo("北京");
-        final ICall<WeatherInfo> xCall = getAPI(XAPI.class).getWeatherInfo("北京");
         final IHttpResponseListener<WeatherInfo> httpResponseListener = new HttpResponseListener<WeatherInfo>() {
             @Override
             public void onResponse(Context context, int requestCode,
                                    WeatherInfo response, boolean isFromCache) {
                 super.onResponse(context, requestCode, response, isFromCache);
-                toast(new Gson().toJson(response));
+                toast("isFromCache:" + isFromCache + "--" + new Gson().toJson(response));
             }
 
             @Override
             public void onException(Context context, Throwable t) {
                 super.onException(context, t);
                 // 自定义异常处理
+                t.printStackTrace();
+                // ToastUtils.showToast(context, t.getMessage());
             }
 
         };
@@ -66,6 +101,8 @@ public class MainActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                final Call<WeatherInfo> call = getAPI(API.class).getWeatherInfo("北京");
+                final ICall<WeatherInfo> xCall = getAPI(XAPI.class).getWeatherInfo("北京");
                 switch (position) {
                     case 0:
                         // 普通的call异步请求
@@ -94,7 +131,8 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case 2:
                         // xcall异步请求1
-                        xCall.execute(context, httpResponseListener);
+                        xCall.cacheStrategy(CacheStrategy.REQUEST_FAILED_READ_CACHE)
+                                .execute(context, httpResponseListener);
                         break;
                     case 3:
                         // xcall异步请求2
@@ -144,38 +182,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // 通常在Application中初始化
-        HttpRequester.init(this);
-        // token验证处理器
-        HttpRequester.setAuthTokenHandler(new AuthTokenHandler() {
-            @Override
-            public String getAuthName() {
-                // 获取权限验证的key
-                return "Authorization";
-            }
-
-            @Override
-            public String getAuthValue(boolean isRefresh) {
-                // 获取权限验证的值，如果isRefresh为true的话，说明需要重新进行验证了
-                if (isRefresh) {
-                    // 进入登录界面
-                    startLoginActivity();
-                    return null;
-                } else {
-                    // 返回token
-                    return "Bearer " + getAccessToken();
-                }
-            }
-
-            @Override
-            public boolean isIgnoreUrl(String url) {
-                // 忽略掉，不需要权限验证的url
-                return false;
-            }
-        });
-        // 注册api接口
-        HttpRequester.registerAPI("http://wthrcdn.etouch.cn", API.class);
-        HttpRequester.registerXAPI("http://wthrcdn.etouch.cn", XAPI.class);
     }
 
     void toast(String message) {

@@ -1,6 +1,7 @@
 package cn.yhq.http.core;
 
 import android.content.Context;
+import android.util.Log;
 
 import java.io.File;
 import java.lang.reflect.Type;
@@ -22,6 +23,7 @@ import retrofit2.Retrofit;
  */
 
 final class XCall<T> implements ICall<T> {
+    private final static String TAG = "XCall";
     // 拦截器
     private final static HttpRequestCacheInterceptor mHttpRequestCacheInterceptor = new HttpRequestCacheInterceptor();
     private final static AuthenticatorInterceptor mAuthenticatorInterceptor = new AuthenticatorInterceptor();
@@ -65,7 +67,10 @@ final class XCall<T> implements ICall<T> {
         public void onResponse(Call<T> call, retrofit2.Response<T> response) {
             mResponse = response;
             mResponseBody = mResponse.body();
-            mCachingSystem.addInCache(response);
+            if (mCacheEnable) {
+                byte[] bytes = SmartUtils.requestToBytes(mRetrofit, mResponseBody, mResponseType, null, null);
+                mCachingSystem.addInCache(response, bytes);
+            }
             mCallUIHandler.responseSuccess(response, mRequestCode);
         }
 
@@ -243,17 +248,22 @@ final class XCall<T> implements ICall<T> {
     private void handleCache() {
         T cache = getCache();
         mResponseBody = cache;
+        Log.i(TAG, "cache：" + mResponseBody);
         mCallUIHandler.responseCache(cache, mRequestCode);
     }
 
     private T getCache() {
         Request request = getRequest();
         byte[] data = mCachingSystem.getFromCache(request);
+        if (data == null) {
+            return null;
+        }
         T responseBody = SmartUtils.bytesToResponse(mRetrofit, mResponseType, null, data);
         return responseBody;
     }
 
     private ICallResponse<T> handleRequest() {
+        Log.i(TAG, mCacheStrategy.toString());
         switch (mCacheStrategy) {
             case ONLY_CACHE:
                 handleCache();
@@ -267,7 +277,6 @@ final class XCall<T> implements ICall<T> {
                 handleNetwork();
                 break;
             case REQUEST_FAILED_READ_CACHE:
-                handleNetwork();
                 final Callback<T> originalCallback = mUICallback;
                 mUICallback = new Callback<T>() {
 
@@ -282,6 +291,7 @@ final class XCall<T> implements ICall<T> {
                         handleCache();
                     }
                 };
+                handleNetwork();
                 break;
             case IF_NONE_CACHE_REQUEST:
                 handleCache();
@@ -322,7 +332,7 @@ final class XCall<T> implements ICall<T> {
                 mUICallback.onResponse(mCall, mResponse);
             }
         } catch (Throwable t) {
-            mCallUIHandler.requestException(t, mRequestCode);
+            mUICallback.onFailure(mCall, t);
         }
     }
 
