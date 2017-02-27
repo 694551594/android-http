@@ -11,13 +11,16 @@ import okio.Okio;
 import okio.Source;
 
 
-class ProgressResponseBody extends ResponseBody {
+public class ProgressResponseBody extends ResponseBody {
     private final ResponseBody responseBody;
-    private final ProgressListener progressListener;
+    private ProgressListener progressListener;
     private BufferedSource bufferedSource;
 
-    public ProgressResponseBody(ResponseBody responseBody, ProgressListener progressListener) {
+    public ProgressResponseBody(ResponseBody responseBody) {
         this.responseBody = responseBody;
+    }
+
+    public void setProgressListener(ProgressListener progressListener) {
         this.progressListener = progressListener;
     }
 

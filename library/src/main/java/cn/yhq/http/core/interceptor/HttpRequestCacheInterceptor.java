@@ -12,6 +12,7 @@ import okhttp3.Response;
  *
  * Created by Yanghuiqiang on 2016/10/14.
  */
+@Deprecated
 public class HttpRequestCacheInterceptor implements Interceptor {
     private static CacheStrategy cacheStrategy;
     private static int cacheMaxStale;
@@ -27,8 +28,6 @@ public class HttpRequestCacheInterceptor implements Interceptor {
         String cacheHeaderName = "Cache-Control";
         String cacheHeaderValue = "max-stale=" + this.cacheMaxStale;
         switch (cacheStrategy) {
-            case BOTH:
-                break;
             case NOCACHE:
                 cacheHeaderValue = "no-cache";
                 break;

@@ -2,13 +2,20 @@ package cn.yhq.http.core;
 
 import android.content.Context;
 
+import java.io.File;
+import java.lang.reflect.Type;
+
+import cn.yhq.http.core.cache.BasicCaching;
+import cn.yhq.http.core.cache.CachingSystem;
 import cn.yhq.http.core.interceptor.AuthTokenInterceptor;
 import cn.yhq.http.core.interceptor.AuthenticatorInterceptor;
 import cn.yhq.http.core.interceptor.HttpRequestCacheInterceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import retrofit2.Retrofit;
 
 /**
  * Created by Yanghuiqiang on 2016/10/14.
@@ -32,9 +39,15 @@ final class XCall<T> implements ICall<T> {
     private IHttpExceptionHandler mHttpExceptionHandler;
     private Call<T> mCall;
     private Response<T> mResponse;
+    private T mResponseBody;
     private CallUIHandler mCallUIHandler;
     private int mRequestCode;
     private boolean isAsync = true;
+    private CacheStrategy mCacheStrategy = CACHE_STRATEGY;
+    private Retrofit mRetrofit;
+    private Type mResponseType;
+    private static CachingSystem mCachingSystem;
+    private boolean mCacheEnable;
 
     private HttpRequestListenerProxy mHttpRequestListenerProxy = new HttpRequestListenerProxy();
     private HttpResponseListenerProxy mHttpResponseListenerProxy = new HttpResponseListenerProxy();
@@ -50,6 +63,9 @@ final class XCall<T> implements ICall<T> {
 
         @Override
         public void onResponse(Call<T> call, retrofit2.Response<T> response) {
+            mResponse = response;
+            mResponseBody = mResponse.body();
+            mCachingSystem.addInCache(response);
             mCallUIHandler.responseSuccess(response, mRequestCode);
         }
 
@@ -58,6 +74,11 @@ final class XCall<T> implements ICall<T> {
             mCallUIHandler.responseException(t, mRequestCode);
         }
     };
+
+    @Override
+    public Call<T> getRaw() {
+        return mCall;
+    }
 
     class HttpResponseListenerProxy extends HttpResponseListener<T> {
 
@@ -121,6 +142,14 @@ final class XCall<T> implements ICall<T> {
         mHttpRequestCacheInterceptor.setCacheStrategy(cacheStrategy, cacheStale);
     }
 
+    public static void setDefaultCachingSystem(File cacheFile) {
+        setCachingSystem(new BasicCaching(cacheFile));
+    }
+
+    public static void setCachingSystem(CachingSystem cachingSystem) {
+        mCachingSystem = cachingSystem;
+    }
+
     public static void setDefaultHttpExceptionHandler(IHttpExceptionHandler httpExceptionHandler) {
         mDefaultHttpExceptionHandler = httpExceptionHandler;
     }
@@ -130,15 +159,26 @@ final class XCall<T> implements ICall<T> {
     }
 
     public static void init(OkHttpClient.Builder builder) {
-        builder.addInterceptor(mHttpRequestCacheInterceptor)
-                .authenticator(mAuthenticatorInterceptor)
+        //builder.addInterceptor(mHttpRequestCacheInterceptor)
+        builder.authenticator(mAuthenticatorInterceptor)
                 .addNetworkInterceptor(mAuthTokenInterceptor);
     }
 
-    public XCall(Call<T> call) {
+    @Deprecated
+    XCall(Call<T> call) {
+        this(null, call, null);
+        this.mCacheEnable = false;
+    }
+
+    XCall(Retrofit retrofit, Call<T> call, Type responseType) {
+        this.mRetrofit = retrofit;
         this.mCall = call;
+        this.mResponseType = responseType;
         this.mHttpExceptionHandler = mDefaultHttpExceptionHandler;
         this.mHttpRequestListener = mDefaultHttpRequestListener;
+        // 默认使用全局的缓存策略
+        this.mCacheStrategy = CACHE_STRATEGY;
+        this.mCacheEnable = true;
     }
 
     @Override
@@ -171,8 +211,19 @@ final class XCall<T> implements ICall<T> {
     }
 
     @Override
-    public ICallExecutor<T> exceptionHandler(IHttpExceptionHandler handler) {
+    public ICall<T> exceptionHandler(IHttpExceptionHandler handler) {
         this.mHttpExceptionHandler = handler;
+        return this;
+    }
+
+    @Override
+    public ICall<T> cacheStrategy(CacheStrategy cacheStrategy) {
+        if (mCacheEnable) {
+            this.mCacheStrategy = cacheStrategy;
+        } else {
+            // 不支持缓存处理
+            this.mCacheStrategy = CacheStrategy.ONLY_NETWORK;
+        }
         return this;
     }
 
@@ -181,22 +232,83 @@ final class XCall<T> implements ICall<T> {
         mCall.cancel();
     }
 
+    private Request getRequest() {
+        Request request = mCall.request();
+        return request;
+    }
+
+    /**
+     * 缓存处理，现在默认使用当前线程
+     */
+    private void handleCache() {
+        T cache = getCache();
+        mResponseBody = cache;
+        mCallUIHandler.responseCache(cache, mRequestCode);
+    }
+
+    private T getCache() {
+        Request request = getRequest();
+        byte[] data = mCachingSystem.getFromCache(request);
+        T responseBody = SmartUtils.bytesToResponse(mRetrofit, mResponseType, null, data);
+        return responseBody;
+    }
+
     private ICallResponse<T> handleRequest() {
+        switch (mCacheStrategy) {
+            case ONLY_CACHE:
+                handleCache();
+                break;
+            case FIRST_CACHE_THEN_REQUEST:
+                handleCache();
+                handleNetwork();
+                break;
+            case ONLY_NETWORK:
+            case NOCACHE:
+                handleNetwork();
+                break;
+            case REQUEST_FAILED_READ_CACHE:
+                handleNetwork();
+                final Callback<T> originalCallback = mUICallback;
+                mUICallback = new Callback<T>() {
+
+                    @Override
+                    public void onResponse(Call<T> call, Response<T> response) {
+                        originalCallback.onResponse(call, response);
+                    }
+
+                    @Override
+                    public void onFailure(Call<T> call, Throwable t) {
+                        originalCallback.onFailure(call, t);
+                        handleCache();
+                    }
+                };
+                break;
+            case IF_NONE_CACHE_REQUEST:
+                handleCache();
+                if (mResponseBody == null) {
+                    handleNetwork();
+                }
+                break;
+        }
+        return getCallResponse();
+    }
+
+    private ICallResponse<T> getCallResponse() {
         ICallResponse<T> callResponse = new ICallResponse<T>() {
             @Override
             public T getResponseBody() {
-                if (mResponse == null) {
-                    return null;
-                }
-                return mResponse.body();
+                return mResponseBody;
             }
 
             @Override
             public Response getResponse() {
                 return mResponse;
             }
-
         };
+        return callResponse;
+    }
+
+    private void handleNetwork() {
         try {
             mCallUIHandler.requestStart(this, mRequestCode);
             // 真正开始请求的地方
@@ -206,12 +318,12 @@ final class XCall<T> implements ICall<T> {
             } else {
                 // 同步执行
                 mResponse = mCall.execute();
+                mResponseBody = mResponse.body();
                 mUICallback.onResponse(mCall, mResponse);
             }
         } catch (Throwable t) {
             mCallUIHandler.requestException(t, mRequestCode);
         }
-        return callResponse;
     }
 
 }

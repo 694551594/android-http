@@ -12,4 +12,5 @@ public interface ICallBuilder<T> {
 
     T exceptionHandler(IHttpExceptionHandler handler);
 
+    T cacheStrategy(CacheStrategy cacheStrategy);
 }

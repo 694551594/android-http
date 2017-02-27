@@ -32,6 +32,8 @@ final class CallUIHandler<T> extends Handler {
     public final static int MSG_RESPONSE_SUCCESS = 5;
     // 响应失败
     public final static int MSG_RESPONSE_FAILURE = 6;
+    // 响应缓存
+    public final static int MSG_RESPONSE_CACHE = 7;
 
     public CallUIHandler(Context context) {
         super(Looper.getMainLooper());
@@ -55,6 +57,7 @@ final class CallUIHandler<T> extends Handler {
         Response<T> response;
         int requestCode;
         Throwable throwable;
+        T responseData;
     }
 
     private void handleResponseMessage(Message msg) {
@@ -70,7 +73,7 @@ final class CallUIHandler<T> extends Handler {
                 Response<T> response = responseInfo.response;
                 boolean isFromCache = response.raw().cacheResponse() != null;
                 if (mHttpResponseListener != null) {
-                    mHttpResponseListener.onResponse(context, requestCode, response.body(), isFromCache);
+                    mHttpResponseListener.onResponse(context, requestCode, responseInfo.responseData, isFromCache);
                 }
                 if (mHttpRequestListener != null) {
                     mHttpRequestListener.onComplete(requestCode);
@@ -82,6 +85,14 @@ final class CallUIHandler<T> extends Handler {
                 }
                 if (mHttpRequestListener != null) {
                     mHttpRequestListener.onException(context, requestCode, t);
+                    mHttpRequestListener.onComplete(requestCode);
+                }
+                break;
+            case MSG_RESPONSE_CACHE:
+                if (mHttpResponseListener != null) {
+                    mHttpResponseListener.onResponse(context, requestCode, responseInfo.responseData, true);
+                }
+                if (mHttpRequestListener != null) {
                     mHttpRequestListener.onComplete(requestCode);
                 }
                 break;
@@ -100,7 +111,7 @@ final class CallUIHandler<T> extends Handler {
         switch (msg.what) {
             case MSG_REQUEST_START:
                 if (mHttpRequestListener != null) {
-                    mHttpRequestListener.onStart(this.mContextRef.get(), cancelable, requestCode);
+                    mHttpRequestListener.onStart(context, cancelable, requestCode);
                 }
                 break;
             case MSG_REQUEST_EXCEPTION:
@@ -112,6 +123,7 @@ final class CallUIHandler<T> extends Handler {
         }
     }
 
+    @Deprecated
     private void handleProgressMessage(Message msg) {
         ProgressInfo progressInfo = (ProgressInfo) msg.obj;
         long bytesRead = progressInfo.bytesRead;
@@ -158,25 +170,34 @@ final class CallUIHandler<T> extends Handler {
         this.sendMessage(Message.obtain(this, MSG_REQUEST_EXCEPTION, requestInfo));
     }
 
+    public void responseCache(T responseData, int requestCode) {
+        ResponseInfo<T> responseInfo = new ResponseInfo<>();
+        responseInfo.requestCode = requestCode;
+        responseInfo.responseData = responseData;
+        this.sendMessage(Message.obtain(this, MSG_RESPONSE_CACHE, responseInfo));
+    }
+
     public void responseSuccess(Response<T> response, int requestCode) {
         if (!response.isSuccessful()) {
             ErrorMessage msg = new ErrorMessage(response.code(), response.message());
             this.responseException(new HttpRequestException(msg), requestCode);
         } else {
-            ResponseInfo<T> responseInfo = new ResponseInfo<T>();
+            ResponseInfo<T> responseInfo = new ResponseInfo<>();
             responseInfo.requestCode = requestCode;
             responseInfo.response = response;
+            responseInfo.responseData = response.body();
             this.sendMessage(Message.obtain(this, MSG_RESPONSE_SUCCESS, responseInfo));
         }
     }
 
     public void responseException(Throwable throwable, int requestCode) {
-        ResponseInfo<T> responseInfo = new ResponseInfo<T>();
+        ResponseInfo<T> responseInfo = new ResponseInfo<>();
         responseInfo.requestCode = requestCode;
         responseInfo.throwable = throwable;
         this.sendMessage(Message.obtain(this, MSG_RESPONSE_FAILURE, responseInfo));
     }
 
+    @Deprecated
     public void progress(int msg, boolean multipart, long bytesRead, long contentLength,
                          boolean done) {
         ProgressInfo progressInfo = new ProgressInfo();
@@ -187,10 +208,12 @@ final class CallUIHandler<T> extends Handler {
         this.sendMessage(Message.obtain(this, msg, progressInfo));
     }
 
+    @Deprecated
     public void requestProgress(boolean multipart, long bytesRead, long contentLength, boolean done) {
         progress(MSG_REQUEST_PROGRESS, multipart, bytesRead, contentLength, done);
     }
 
+    @Deprecated
     public void responseProgress(boolean multipart, long bytesRead, long contentLength,
                                  boolean done) {
         progress(MSG_RESPONSE_PROGRESS, multipart, bytesRead, contentLength, done);

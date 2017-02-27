@@ -3,6 +3,7 @@ package cn.yhq.http.core;
 import android.content.Context;
 
 import java.io.File;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +38,7 @@ public final class HttpRequester<T> {
 
         private Context context;
         private int requestCode;
+        private CacheStrategy cacheStrategy;
         private boolean async = true;
         private IHttpExceptionHandler httpExceptionHandler;
 
@@ -79,6 +81,7 @@ public final class HttpRequester<T> {
             xCall.requestCode(requestCode);
             xCall.async(async);
             xCall.exceptionHandler(httpExceptionHandler);
+            xCall.cacheStrategy(cacheStrategy);
             HttpRequester<T> httpRequester = new HttpRequester<>(this);
             return httpRequester;
         }
@@ -125,6 +128,12 @@ public final class HttpRequester<T> {
             return this;
         }
 
+        @Override
+        public Builder<T> cacheStrategy(CacheStrategy cacheStrategy) {
+            this.cacheStrategy = cacheStrategy;
+            return this;
+        }
+
         /**
          * 设置请求码
          *
@@ -143,6 +152,7 @@ public final class HttpRequester<T> {
          * @param call
          * @return
          */
+        @Deprecated
         public Builder<T> call(Call<T> call) {
             xCall = new XCall<>(call);
             return this;
@@ -236,6 +246,12 @@ public final class HttpRequester<T> {
 
     public static void init(Context context) {
         initDefaultOkHttpClient(context.getApplicationContext());
+        File cacheDirectory = new File(Util.getDiskFileDir(context), "okhttp");
+        XCall.setDefaultCachingSystem(cacheDirectory);
+    }
+
+    public static void setDefaultCachingSystem(File cacheFile) {
+        XCall.setDefaultCachingSystem(cacheFile);
     }
 
     public static void setOkHttpClient(OkHttpClient.Builder builder) {
@@ -268,14 +284,20 @@ public final class HttpRequester<T> {
         XCall.setDefaultHttpRequestListener(httpRequestListener);
     }
 
+    @Deprecated
     public static <T> ICall<T> call(Call<T> call) {
         return new XCall<>(call);
     }
 
-    public static <T> ICallResponse<T> execute(Context context, ICall<T> call, IHttpResponseListener<T> listener) {
-        return new HttpRequester.Builder<T>(context).call(call).listener(listener).request();
+    public static <T> ICall<T> call(Retrofit retrofit, Call<T> call, Type responseType) {
+        return new XCall<>(retrofit, call, responseType);
     }
 
+    public static <T> ICallResponse<T> execute(Context context, ICall<T> call, IHttpResponseListener<T> listener) {
+        return call.execute(context, listener);
+    }
+
+    @Deprecated
     public static <T> ICallResponse<T> execute(Context context, Call<T> call, IHttpResponseListener<T> listener) {
         return new HttpRequester.Builder<T>(context).call(call).listener(listener).request();
     }
