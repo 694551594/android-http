@@ -17,8 +17,8 @@ import retrofit2.Response;
 
 
 /**
- * A basic caching system that stores responses in RAM & disk
- * It uses {@link DiskLruCache} and {@link LruCache} to do the former.
+ * A basic caching system that stores responses in RAM and disk
+ * It uses DiskLruCache and LruCache to do the former.
  */
 public class BasicCaching implements CachingSystem {
     private DiskLruCache diskCache;
