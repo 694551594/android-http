@@ -12,7 +12,7 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 
-class DefaultHttpExceptionListener implements IHttpExceptionHandler {
+public class DefaultHttpExceptionListener implements IHttpExceptionHandler {
 
     @Override
     public void onException(Context context, Throwable t) {
