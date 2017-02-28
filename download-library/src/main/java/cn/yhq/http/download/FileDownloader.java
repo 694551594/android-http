@@ -183,7 +183,7 @@ public final class FileDownloader {
         // 通知栏显示的标题
         private String notificationTitle;
         // 请求头
-        private Map<String, String> requestHeader = new HashMap<String, String>();
+        private Map<String, String> requestHeader = new HashMap<>();
         private List<IDownloadResponseListener> downloadResponseListeners;
         private List<IDownloadProgressListener> downloadProgressListeners;
         private List<IDownloaderListener> downloaderListeners;
@@ -196,14 +196,18 @@ public final class FileDownloader {
         private String downloadSuccessText = "文件下载成功";
         private String downloadFailureText = "文件下载失败，请稍后重试";
 
+        private int progressStyle;
+
         public enum FileExistHandler {
             // 重新下载、询问、打开
             REDOWNLOAD, ASK, OPEN, RENAME, NONE;
         }
 
         // 进度显示的形式
-        public enum ProgressStyle {
-            BOTH, NOTIFACTION, DIALOG, NONE
+        public interface ProgressStyle {
+            int NOTIFACTION = 0;
+            int PROGRESS_DIALOG = 1;
+            int LOADING_DIALOG = 2;
         }
 
         public Builder(Context context) {
@@ -287,29 +291,22 @@ public final class FileDownloader {
             return this;
         }
 
-        public Builder progressStyle(ProgressStyle mProgressStyle) {
+        public Builder progressStyle(int progressStyle) {
             this.notificationTitle(this.localFile.getName());
             NotificationProgressListener notificationProgressListener =
                     new NotificationProgressListener(this);
             DialogProgressListener dialogProgressListener = new DialogProgressListener(this);
-            switch (mProgressStyle) {
-                case BOTH:
-                    this.listener((IDownloadProgressListener) notificationProgressListener);
-                    this.listener((IDownloaderListener) notificationProgressListener);
-                    this.listener((IDownloadProgressListener) dialogProgressListener);
-                    this.listener((IDownloaderListener) dialogProgressListener);
-                    break;
-                case DIALOG:
-                    this.listener((IDownloadProgressListener) dialogProgressListener);
-                    this.listener((IDownloaderListener) dialogProgressListener);
-                    break;
-                case NOTIFACTION:
-                    this.listener((IDownloadProgressListener) notificationProgressListener);
-                    this.listener((IDownloaderListener) notificationProgressListener);
-                    break;
-                case NONE:
-                default:
-                    break;
+            DialogLoadingListener dialogLoadingListener = new DialogLoadingListener(this);
+            if ((progressStyle & ProgressStyle.NOTIFACTION) == ProgressStyle.NOTIFACTION) {
+                this.listener((IDownloadProgressListener) notificationProgressListener);
+                this.listener((IDownloaderListener) notificationProgressListener);
+            }
+            if ((progressStyle & ProgressStyle.PROGRESS_DIALOG) == ProgressStyle.PROGRESS_DIALOG) {
+                this.listener((IDownloadProgressListener) dialogProgressListener);
+                this.listener((IDownloaderListener) dialogProgressListener);
+            } else if ((progressStyle & ProgressStyle.LOADING_DIALOG) == ProgressStyle.LOADING_DIALOG) {
+                this.listener((IDownloadProgressListener) dialogLoadingListener);
+                this.listener((IDownloaderListener) dialogLoadingListener);
             }
             return this;
         }

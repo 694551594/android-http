@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.novoda.bintray-release'
 
 android {
     compileSdkVersion 25
@@ -31,4 +32,13 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'cn.yhq:android-utils:1.1.0'
     compile project(':library')
+}
+
+publish {
+    artifactId = 'android-download'
+    userOrg = rootProject.userOrg
+    groupId = rootProject.groupId
+    publishVersion = "1.0.0"
+    desc = rootProject.description
+    website = rootProject.website
 }
