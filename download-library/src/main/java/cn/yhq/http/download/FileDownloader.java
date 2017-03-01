@@ -214,10 +214,10 @@ public final class FileDownloader {
             this.downloaderListeners = new ArrayList<>();
             this.downloadProgressListeners = new ArrayList<>();
             this.downloadResponseListeners = new ArrayList<>();
+            this.dir(cn.yhq.utils.FileUtils.getDownloadPath(getContext()));
         }
 
         public Builder build() {
-            this.dir(cn.yhq.utils.FileUtils.getDownloadPath(getContext()));
             this.httpDownloader(new RetrofitHttpDownloader(call));
             this.listener(new DownloaderInterceptorDispatcher());
             this.listener(new DownloaderListener(downloadSuccessText, downloadFailureText));
