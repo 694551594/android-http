@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.Map;
 
 import cn.yhq.dialog.core.DialogBuilder;
-import cn.yhq.http.core.ICall;
 import cn.yhq.http.core.ProgressResponseBody;
 import cn.yhq.utils.ToastUtils;
+import retrofit2.Call;
 
 /**
  * 文件下载器
@@ -191,12 +191,10 @@ public final class FileDownloader {
         private FileExistHandler mFileExistHandler;
         private boolean autoOpenDownloadSuccess = true;
         private IHttpDownloader httpDownloader;
-        private ICall<ProgressResponseBody> call;
+        private Call<ProgressResponseBody> call;
 
         private String downloadSuccessText = "文件下载成功";
         private String downloadFailureText = "文件下载失败，请稍后重试";
-
-        private int progressStyle;
 
         public enum FileExistHandler {
             // 重新下载、询问、打开
@@ -231,7 +229,7 @@ public final class FileDownloader {
             return FileDownloader.getDownloader().download(this);
         }
 
-        public Builder call(ICall<ProgressResponseBody> call) {
+        public Builder call(Call<ProgressResponseBody> call) {
             this.call = call;
             return this;
         }
@@ -476,7 +474,7 @@ public final class FileDownloader {
         }
         String url = null;
         if (builder.call != null) {
-            url = builder.call.getRaw().request().url().toString();
+            url = builder.call.request().url().toString();
         }
         if (url != null) {
             String taskId = this.mUrlMapper.get(url);
@@ -507,8 +505,7 @@ public final class FileDownloader {
      */
     public static void openFile(Context context, String path) {
         try {
-            OpenFileIntent openIntent = OpenFileIntent.getInstance();
-            Intent intent = openIntent.getFileIntent(path);
+            Intent intent = IntentFactory.getFileIntent(path);
             context.startActivity(intent);
         } catch (Exception e) {
             ToastUtils.showToast(context, "没有找到打开此文件的客户端");

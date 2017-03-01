@@ -91,7 +91,7 @@ class NotificationProgressListener implements IDownloadProgressListener, IDownlo
 
     @Override
     public void onSuccess(String taskId, File file) {
-        Intent intent = OpenFileIntent.getInstance().getFileIntent(file.getPath());
+        Intent intent = IntentFactory.getFileIntent(file.getPath());
         PendingIntent pendingIntent = PendingIntent.getActivity(mContext, 0, intent, 0);
         NotificationCompat.Builder notificationBuilder = getNotificationBuilder();
         notificationBuilder.setContentTitle(builder.getNotificationTitle());

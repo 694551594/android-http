@@ -8,17 +8,19 @@ import java.io.FileOutputStream;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import cn.yhq.http.core.ICall;
+import cn.yhq.http.core.HttpRequester;
+import cn.yhq.http.core.IHttpRequestListener;
 import cn.yhq.http.core.IHttpResponseListener;
 import cn.yhq.http.core.ProgressListener;
 import cn.yhq.http.core.ProgressResponseBody;
 import okhttp3.ResponseBody;
+import retrofit2.Call;
 
 public final class RetrofitHttpDownloader implements IHttpDownloader {
-    private ICall<ProgressResponseBody> mCall;
+    private Call<ProgressResponseBody> mCall;
     private final static Executor executor = Executors.newFixedThreadPool(5);
 
-    public RetrofitHttpDownloader(ICall<ProgressResponseBody> call) {
+    public RetrofitHttpDownloader(Call<ProgressResponseBody> call) {
         this.mCall = call;
     }
 
@@ -58,36 +60,39 @@ public final class RetrofitHttpDownloader implements IHttpDownloader {
 
     @Override
     public void download(Context context, final DownloadTask downloadTask) {
-        // 执行上传请求
-        mCall.execute(context, null, new IHttpResponseListener<ProgressResponseBody>() {
+        // 执行下载请求
+        new HttpRequester.Builder<ProgressResponseBody>(context)
+                .call(mCall)
+                .listener((IHttpRequestListener) null)
+                .listener(new IHttpResponseListener<ProgressResponseBody>() {
 
-            @Override
-            public void onResponse(Context context, int requestCode, ProgressResponseBody response,
-                                   boolean isFromCache) {
-                response.setProgressListener(new ProgressListener() {
                     @Override
-                    public void onProgress(long bytesRead, long contentLength) {
-                        int progress = (int) ((bytesRead * 1.0 / contentLength) * 100);
-                        if (progress < 0) {
-                            progress = 0;
-                        } else if (progress > 100) {
-                            progress = 100;
+                    public void onResponse(Context context, int requestCode, ProgressResponseBody response,
+                                           boolean isFromCache) {
+                        response.setProgressListener(new ProgressListener() {
+                            @Override
+                            public void onProgress(long bytesRead, long contentLength) {
+                                int progress = (int) ((bytesRead * 1.0 / contentLength) * 100);
+                                if (progress < 0) {
+                                    progress = 0;
+                                } else if (progress > 100) {
+                                    progress = 100;
+                                }
+                                downloadTask.getDownloadProgressListenerDispatcher().onProgress(progress);
+                            }
+                        });
+                        if (!isFromCache) {
+                            new DownloadAsyncTask(downloadTask).executeOnExecutor(executor, response);
                         }
-                        downloadTask.getDownloadProgressListenerDispatcher().onProgress(progress);
+
                     }
-                });
-                if (!isFromCache) {
-                    new DownloadAsyncTask(downloadTask).executeOnExecutor(executor, response);
-                }
 
-            }
+                    @Override
+                    public void onException(Context context, Throwable t) {
+                        downloadTask.getDownloadResponseListenerDispatcher().onException(downloadTask.getId(), t);
+                    }
 
-            @Override
-            public void onException(Context context, Throwable t) {
-                downloadTask.getDownloadResponseListenerDispatcher().onException(downloadTask.getId(), t);
-            }
-
-        });
+                }).request();
     }
 
     @Override
