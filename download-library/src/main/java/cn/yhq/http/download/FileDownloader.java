@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.Map;
 
 import cn.yhq.dialog.core.DialogBuilder;
-import cn.yhq.http.core.ProgressResponseBody;
+import cn.yhq.http.core.ICall;
 import cn.yhq.utils.ToastUtils;
-import retrofit2.Call;
+import okhttp3.ResponseBody;
 
 /**
  * 文件下载器
@@ -191,7 +191,7 @@ public final class FileDownloader {
         private FileExistHandler mFileExistHandler;
         private boolean autoOpenDownloadSuccess = true;
         private IHttpDownloader httpDownloader;
-        private Call<ProgressResponseBody> call;
+        private ICall<ResponseBody> call;
 
         private String downloadSuccessText = "文件下载成功";
         private String downloadFailureText = "文件下载失败，请稍后重试";
@@ -203,9 +203,9 @@ public final class FileDownloader {
 
         // 进度显示的形式
         public interface ProgressStyle {
-            int NOTIFACTION = 0;
-            int PROGRESS_DIALOG = 1;
-            int LOADING_DIALOG = 2;
+            int NOTIFACTION = 1;
+            int PROGRESS_DIALOG = 2;
+            int LOADING_DIALOG = 4;
         }
 
         public Builder(Context context) {
@@ -217,6 +217,7 @@ public final class FileDownloader {
         }
 
         public Builder build() {
+            this.dir(cn.yhq.utils.FileUtils.getDownloadPath(getContext()));
             this.httpDownloader(new RetrofitHttpDownloader(call));
             this.listener(new DownloaderInterceptorDispatcher());
             this.listener(new DownloaderListener(downloadSuccessText, downloadFailureText));
@@ -229,7 +230,7 @@ public final class FileDownloader {
             return FileDownloader.getDownloader().download(this);
         }
 
-        public Builder call(Call<ProgressResponseBody> call) {
+        public Builder call(ICall<ResponseBody> call) {
             this.call = call;
             return this;
         }
@@ -240,7 +241,7 @@ public final class FileDownloader {
         }
 
         public Builder localName(String localName) {
-            this.localFile = new File(downloadDir + localName);
+            this.localFile = new File(downloadDir, localName);
             return this;
         }
 
@@ -474,7 +475,7 @@ public final class FileDownloader {
         }
         String url = null;
         if (builder.call != null) {
-            url = builder.call.request().url().toString();
+            url = builder.call.getRaw().request().url().toString();
         }
         if (url != null) {
             String taskId = this.mUrlMapper.get(url);

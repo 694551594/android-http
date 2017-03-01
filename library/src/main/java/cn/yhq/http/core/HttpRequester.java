@@ -218,9 +218,27 @@ public final class HttpRequester<T> {
         return api;
     }
 
+    public static <API> API registerAPI(Retrofit.Builder builder, Class<API> apiClass) {
+        Retrofit retrofit = builder.client(getOkHttpClient())
+                .build();
+        API api = retrofit.create(apiClass);
+        apis.put(apiClass, api);
+        return api;
+    }
+
+    public static <API> API registerXAPI(Retrofit.Builder builder, Class<API> apiClass) {
+        Retrofit retrofit = builder.client(getOkHttpClient())
+                .addCallAdapterFactory(new XCallAdapterFactory())
+                .build();
+        API api = retrofit.create(apiClass);
+        apis.put(apiClass, api);
+        return api;
+    }
+
     public static <API> API registerXAPI(String baseUrl, Class<API> apiClass) {
         Retrofit retrofit = new Retrofit.Builder().baseUrl(baseUrl).client(getOkHttpClient())
-                .addConverterFactory(GsonConverterFactory.create()).addCallAdapterFactory(new XCallAdapterFactory()).build();
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(new XCallAdapterFactory()).build();
         API api = retrofit.create(apiClass);
         apis.put(apiClass, api);
         return api;
@@ -240,7 +258,7 @@ public final class HttpRequester<T> {
         // Cache cache = new Cache(cacheDirectory, cacheSize);
         OkHttpClient.Builder builder = new OkHttpClient.Builder().connectTimeout(1, TimeUnit.MINUTES)
                 .readTimeout(1, TimeUnit.MINUTES).writeTimeout(1, TimeUnit.MINUTES);
-                //.cache(cache);
+        //.cache(cache);
         setOkHttpClient(builder);
     }
 

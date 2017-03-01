@@ -9,18 +9,18 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import cn.yhq.http.core.HttpRequester;
+import cn.yhq.http.core.ICall;
 import cn.yhq.http.core.IHttpRequestListener;
 import cn.yhq.http.core.IHttpResponseListener;
 import cn.yhq.http.core.ProgressListener;
 import cn.yhq.http.core.ProgressResponseBody;
 import okhttp3.ResponseBody;
-import retrofit2.Call;
 
 public final class RetrofitHttpDownloader implements IHttpDownloader {
-    private Call<ProgressResponseBody> mCall;
+    private ICall<ResponseBody> mCall;
     private final static Executor executor = Executors.newFixedThreadPool(5);
 
-    public RetrofitHttpDownloader(Call<ProgressResponseBody> call) {
+    public RetrofitHttpDownloader(ICall<ResponseBody> call) {
         this.mCall = call;
     }
 
@@ -61,15 +61,16 @@ public final class RetrofitHttpDownloader implements IHttpDownloader {
     @Override
     public void download(Context context, final DownloadTask downloadTask) {
         // 执行下载请求
-        new HttpRequester.Builder<ProgressResponseBody>(context)
+        new HttpRequester.Builder<ResponseBody>(context)
                 .call(mCall)
                 .listener((IHttpRequestListener) null)
-                .listener(new IHttpResponseListener<ProgressResponseBody>() {
+                .listener(new IHttpResponseListener<ResponseBody>() {
 
                     @Override
-                    public void onResponse(Context context, int requestCode, ProgressResponseBody response,
+                    public void onResponse(Context context, int requestCode, ResponseBody response,
                                            boolean isFromCache) {
-                        response.setProgressListener(new ProgressListener() {
+                        ProgressResponseBody progressResponseBody = new ProgressResponseBody(response);
+                        progressResponseBody.setProgressListener(new ProgressListener() {
                             @Override
                             public void onProgress(long bytesRead, long contentLength) {
                                 int progress = (int) ((bytesRead * 1.0 / contentLength) * 100);
@@ -82,7 +83,7 @@ public final class RetrofitHttpDownloader implements IHttpDownloader {
                             }
                         });
                         if (!isFromCache) {
-                            new DownloadAsyncTask(downloadTask).executeOnExecutor(executor, response);
+                            new DownloadAsyncTask(downloadTask).executeOnExecutor(executor, progressResponseBody);
                         }
 
                     }
