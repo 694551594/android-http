@@ -34,7 +34,7 @@ final class XCall<T> implements ICall<T> {
 
     // 缓存有效时间
     public final static int CACHE_MAX_STALE = 7 * 24 * 3600;
-    private final static CacheStrategy CACHE_STRATEGY = CacheStrategy.ONLY_NETWORK;
+    private static CacheStrategy CACHE_STRATEGY = CacheStrategy.ONLY_NETWORK;
 
     private IHttpRequestListener mHttpRequestListener;
     private IHttpResponseListener<T> mHttpResponseListener;
@@ -145,7 +145,7 @@ final class XCall<T> implements ICall<T> {
     }
 
     public static void setCacheStrategy(CacheStrategy cacheStrategy, int cacheStale) {
-        mHttpRequestCacheInterceptor.setCacheStrategy(cacheStrategy, cacheStale);
+        CACHE_STRATEGY = cacheStrategy;
     }
 
     public static void setDefaultCachingSystem(File cacheFile) {
