@@ -8,4 +8,6 @@ public interface CachingSystem {
     <T> void addInCache(Response<T> response, byte[] bytes);
 
     byte[] getFromCache(Request request);
+
+    void clearCache(Request request);
 }

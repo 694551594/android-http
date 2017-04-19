@@ -93,6 +93,17 @@ public class BasicCaching implements CachingSystem {
         }
     }
 
+    @Override
+    public void clearCache(Request request) {
+        String cacheKey = urlToKey(request.url().url());
+        memoryCache.remove(cacheKey);
+        try {
+            diskCache.remove(cacheKey);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private String urlToKey(URL url) {
         return Hashing.sha1().hashString(url.toString(), Charset.defaultCharset()).toString();
     }

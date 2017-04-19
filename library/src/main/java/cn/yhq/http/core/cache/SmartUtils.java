@@ -1,4 +1,4 @@
-package cn.yhq.http.core;
+package cn.yhq.http.core.cache;
 
 import android.util.Log;
 

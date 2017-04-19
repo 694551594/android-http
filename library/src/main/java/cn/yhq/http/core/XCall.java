@@ -7,10 +7,11 @@ import java.io.File;
 import java.lang.reflect.Type;
 
 import cn.yhq.http.core.cache.BasicCaching;
+import cn.yhq.http.core.cache.CacheUtils;
 import cn.yhq.http.core.cache.CachingSystem;
+import cn.yhq.http.core.cache.SmartUtils;
 import cn.yhq.http.core.interceptor.AuthTokenInterceptor;
 import cn.yhq.http.core.interceptor.AuthenticatorInterceptor;
-import cn.yhq.http.core.interceptor.HttpRequestCacheInterceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import retrofit2.Call;
@@ -25,7 +26,6 @@ import retrofit2.Retrofit;
 final class XCall<T> implements ICall<T> {
     private final static String TAG = "XCall";
     // 拦截器
-    private final static HttpRequestCacheInterceptor mHttpRequestCacheInterceptor = new HttpRequestCacheInterceptor();
     private final static AuthenticatorInterceptor mAuthenticatorInterceptor = new AuthenticatorInterceptor();
     private final static AuthTokenInterceptor mAuthTokenInterceptor = new AuthTokenInterceptor();
 
@@ -33,7 +33,7 @@ final class XCall<T> implements ICall<T> {
     private static IHttpExceptionHandler mDefaultHttpExceptionHandler;
 
     // 缓存有效时间
-    public final static int CACHE_MAX_STALE = 7 * 24 * 3600;
+    private static int CACHE_STALE = 7 * 24 * 3600;
     private static CacheStrategy CACHE_STRATEGY = CacheStrategy.ONLY_NETWORK;
 
     private IHttpRequestListener mHttpRequestListener;
@@ -46,6 +46,7 @@ final class XCall<T> implements ICall<T> {
     private int mRequestCode;
     private boolean isAsync = true;
     private CacheStrategy mCacheStrategy = CACHE_STRATEGY;
+    private int mCacheStale = CACHE_STALE;
     private Retrofit mRetrofit;
     private Type mResponseType;
     private static CachingSystem mCachingSystem;
@@ -56,7 +57,7 @@ final class XCall<T> implements ICall<T> {
     private HttpResponseListenerProxy mHttpResponseListenerProxy = new HttpResponseListenerProxy();
 
     static {
-        setCacheStrategy(CACHE_STRATEGY, CACHE_MAX_STALE);
+        setCacheStrategy(CACHE_STRATEGY, CACHE_STALE);
         setDefaultHttpExceptionHandler(new DefaultHttpExceptionListener());
         setDefaultHttpRequestListener(new DefaultHttpRequestListener());
     }
@@ -70,7 +71,8 @@ final class XCall<T> implements ICall<T> {
             mResponseBody = mResponse.body();
             if (mCacheEnable && mCacheSupport) {
                 byte[] bytes = SmartUtils.requestToBytes(mRetrofit, mResponseBody, mResponseType, null, null);
-                mCachingSystem.addInCache(response, bytes);
+                byte[] cacheData = CacheUtils.newByteArrayWithDateInfo(mCacheStale, bytes);
+                mCachingSystem.addInCache(response, cacheData);
             }
             mCallUIHandler.responseSuccess(response, mRequestCode);
         }
@@ -146,6 +148,7 @@ final class XCall<T> implements ICall<T> {
 
     public static void setCacheStrategy(CacheStrategy cacheStrategy, int cacheStale) {
         CACHE_STRATEGY = cacheStrategy;
+        CACHE_STALE = cacheStale;
     }
 
     public static void setDefaultCachingSystem(File cacheFile) {
@@ -166,7 +169,6 @@ final class XCall<T> implements ICall<T> {
     }
 
     public static void init(OkHttpClient.Builder builder) {
-        //builder.addInterceptor(mHttpRequestCacheInterceptor)
         builder.authenticator(mAuthenticatorInterceptor)
                 .addNetworkInterceptor(mAuthTokenInterceptor);
     }
@@ -224,6 +226,12 @@ final class XCall<T> implements ICall<T> {
     }
 
     @Override
+    public ICallExecutor<T> cacheStale(int cacheStale) {
+        this.mCacheStale = cacheStale;
+        return this;
+    }
+
+    @Override
     public ICall<T> cacheStrategy(CacheStrategy cacheStrategy) {
         if (mCacheEnable && mCacheSupport) {
             this.mCacheStrategy = cacheStrategy;
@@ -260,12 +268,25 @@ final class XCall<T> implements ICall<T> {
         if (data == null) {
             return null;
         }
-        T responseBody = SmartUtils.bytesToResponse(mRetrofit, mResponseType, null, data);
+        byte[] response;
+        if (!CacheUtils.isDue(data)) {
+            response = CacheUtils.clearDateInfo(data);
+        } else {
+            mCachingSystem.clearCache(request);
+            response = null;
+        }
+        if (response == null) {
+            return null;
+        }
+        T responseBody = SmartUtils.bytesToResponse(mRetrofit, mResponseType, null, response);
         return responseBody;
     }
 
     private ICallResponse<T> handleRequest() {
         Log.i(TAG, mCacheStrategy.toString());
+        if (mCall.request().method() != "GET") {
+            mCacheStrategy = CacheStrategy.ONLY_NETWORK;
+        }
         switch (mCacheStrategy) {
             case ONLY_CACHE:
                 handleCache();

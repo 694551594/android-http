@@ -38,6 +38,7 @@ public final class HttpRequester<T> {
         private Context context;
         private int requestCode;
         private CacheStrategy cacheStrategy = CacheStrategy.ONLY_NETWORK;
+        private int cacheStale;
         private boolean async = true;
         private IHttpExceptionHandler httpExceptionHandler;
 
@@ -81,6 +82,7 @@ public final class HttpRequester<T> {
             xCall.async(async);
             xCall.exceptionHandler(httpExceptionHandler);
             xCall.cacheStrategy(cacheStrategy);
+            xCall.cacheStale(cacheStale);
             HttpRequester<T> httpRequester = new HttpRequester<>(this);
             return httpRequester;
         }
@@ -130,6 +132,12 @@ public final class HttpRequester<T> {
         @Override
         public Builder<T> cacheStrategy(CacheStrategy cacheStrategy) {
             this.cacheStrategy = cacheStrategy;
+            return this;
+        }
+
+        @Override
+        public Builder<T> cacheStale(int cacheStale) {
+            this.cacheStale = cacheStale;
             return this;
         }
 
@@ -253,8 +261,8 @@ public final class HttpRequester<T> {
     }
 
     private static void initDefaultOkHttpClient(Context context) {
-        int cacheSize = 10 * 1024 * 1024; // 10 MiB
-        File cacheDirectory = new File(Util.getDiskFileDir(context), "okhttp");
+        // int cacheSize = 10 * 1024 * 1024; // 10 MiB
+        // File cacheDirectory = new File(Util.getDiskFileDir(context), "okhttp");
         // Cache cache = new Cache(cacheDirectory, cacheSize);
         OkHttpClient.Builder builder = new OkHttpClient.Builder().connectTimeout(1, TimeUnit.MINUTES)
                 .readTimeout(1, TimeUnit.MINUTES).writeTimeout(1, TimeUnit.MINUTES);

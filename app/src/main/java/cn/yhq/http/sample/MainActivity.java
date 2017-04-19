@@ -138,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
                         // xcall异步请求2
                         new HttpRequester.Builder<WeatherInfo>(context)
                                 .call(xCall)
+                                .cacheStrategy(CacheStrategy.FIRST_CACHE_THEN_REQUEST)
                                 .listener(httpResponseListener)
                                 .request();
                         break;

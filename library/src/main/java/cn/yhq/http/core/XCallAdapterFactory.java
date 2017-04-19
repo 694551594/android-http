@@ -12,7 +12,7 @@ import retrofit2.Retrofit;
  * Created by Yanghuiqiang on 2016/10/14.
  */
 
-final class XCallAdapterFactory extends CallAdapter.Factory {
+public final class XCallAdapterFactory extends CallAdapter.Factory {
 
     XCallAdapterFactory() {
     }
