@@ -2,6 +2,7 @@ package cn.yhq.http.upload;
 
 import android.content.Context;
 
+import cn.yhq.dialog.builder.ProgressDialogBuilder;
 import cn.yhq.dialog.core.DialogBuilder;
 import cn.yhq.dialog.core.IDialog;
 
@@ -11,7 +12,7 @@ import cn.yhq.dialog.core.IDialog;
 
 public class DefaultOnUploadProgressListener implements OnUploadProgressListener {
     private IDialog dialog;
-    private DialogBuilder.ProgressHandler progressHandler = new DialogBuilder.ProgressHandler();
+    private ProgressDialogBuilder.ProgressHandler progressHandler = new ProgressDialogBuilder.ProgressHandler();
 
     public DefaultOnUploadProgressListener(Context context) {
         dialog = DialogBuilder.progressDialog(context)

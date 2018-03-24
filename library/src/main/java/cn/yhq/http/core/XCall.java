@@ -335,7 +335,7 @@ final class XCall<T> implements ICall<T> {
             }
 
             @Override
-            public Response getResponse() {
+            public Response<T> getResponse() {
                 return mResponse;
             }
         };

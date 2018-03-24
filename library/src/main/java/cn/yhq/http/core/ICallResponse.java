@@ -9,6 +9,6 @@ import retrofit2.Response;
 public interface ICallResponse<T> {
     T getResponseBody();
 
-    Response getResponse();
+    Response<T> getResponse();
 
 }

@@ -70,7 +70,7 @@ class NotificationProgressListener implements IDownloadProgressListener, IDownlo
     private NotificationCompat.Builder getNotificationBuilder() {
         // int iconRes =
         // FileIconManager.getInstance().getFileIcon(mDownloadConfigs.get(url).localFileName);
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(mContext)
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(mContext, "channelid_download")
                 .setSmallIcon(R.drawable.ic_launcher).setAutoCancel(true);
         return notificationBuilder;
     }

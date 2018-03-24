@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 
 import java.io.File;
 
+import cn.yhq.dialog.builder.ProgressDialogBuilder;
 import cn.yhq.dialog.core.DialogBuilder;
 import cn.yhq.dialog.core.IDialog;
 
@@ -16,7 +17,7 @@ class DialogProgressListener
         implements
         IDownloadProgressListener,
         IDownloaderListener, DialogInterface.OnCancelListener {
-    private DialogBuilder.ProgressHandler mProgressHandler = new DialogBuilder.ProgressHandler();
+    private ProgressDialogBuilder.ProgressHandler mProgressHandler = new ProgressDialogBuilder.ProgressHandler();
     private IDialog mProgressDialog;
     private FileDownloader.Builder builder;
     private Context mContext;

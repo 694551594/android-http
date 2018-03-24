@@ -18,19 +18,19 @@ public final class XCallAdapterFactory extends CallAdapter.Factory {
     }
 
     @Override
-    public CallAdapter<XCall<?>> get(Type returnType, Annotation[] annotations, final Retrofit retrofit) {
+    public CallAdapter<Object, XCall<Object>> get(Type returnType, Annotation[] annotations, final Retrofit retrofit) {
         if (getRawType(returnType) != ICall.class) {
             return null;
         }
         final Type responseType = getParameterUpperBound(0, (ParameterizedType) returnType);
-        return new CallAdapter<XCall<?>>() {
+        return new CallAdapter<Object, XCall<Object>>() {
             @Override
             public Type responseType() {
                 return responseType;
             }
 
             @Override
-            public <R> XCall<R> adapt(Call<R> call) {
+            public XCall<Object> adapt(Call<Object> call) {
                 return new XCall<>(retrofit, call, responseType);
             }
         };
